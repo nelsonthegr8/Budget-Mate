@@ -1,0 +1,124 @@
+﻿@page "/expense"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Financial_ForeCast.Models
+@using Financial_ForeCast.Services
+
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Expense</MudText>
+                        <MudSelect @bind-Value="roadMapId" Label="RoadMaps">
+                            @foreach (var roadM in roadMaps)
+                            {
+                                <MudSelectItem Value="roadM.Id">@roadM.RoadMapName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTextField @bind-Value="@BillExpenseName" Label="Expense Name" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" />
+                    <MudNumericField @bind-Value="@AmountDisplay" Label="Amount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" HideSpinButtons ="true"/>
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="width:50%;" OnClick="@Save">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Current Expenses</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudDataGrid Items="@incomeAndExpenses" SortMode="@SortMode.Single" Groupable="false" Height="25vh" FixedHeader="true" Breakpoint="Breakpoint.None" >
+                        <Columns>
+                            <PropertyColumn Property="x => x.Name" />
+                            <PropertyColumn Property="x => x.Amount" />
+                            <TemplateColumn CellClass="d-flex justify-end">
+                                <CellTemplate Context="incomeE">
+                                    <MudStack Row>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => RemoveIncomeExpense(incomeE)" >Delete</MudIconButton>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private LocalDbService _dbService;
+    public IEnumerable<IncomeExpense> incomeAndExpenses = new List<IncomeExpense>();
+    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
+    int roadMapId;
+    public string BillExpenseName { get; set; }
+    public string AmountDisplay { get; set; }
+    public double Amount { get; set; }
+
+    public void RemoveIncomeExpense(MudBlazor.CellContext<IncomeExpense> result)
+    {
+        // Implement the logic to remove the incomeExpense from the database
+        Task.Run(() => _dbService.RemoveByIncomeExpenseByID(result.Item.Id));
+        // Optionally, update the UI by removing the item from the list
+        incomeAndExpenses = incomeAndExpenses.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    public async Task Save()
+    {
+        if (AmountDisplay == null)
+        {
+            Amount = 0;
+        }
+        else
+        {
+            Amount = Convert.ToDouble(AmountDisplay);
+        }
+        var IncomeExpense = new IncomeExpense
+            {
+                RoadMapID = roadMapId,
+                Name = BillExpenseName,
+                Amount = Amount,
+                Type = "Expense"
+            };
+
+        await Task.Run(() => _dbService.AddIncomeExpense(IncomeExpense));
+
+        BillExpenseName = "";
+        AmountDisplay = "";
+
+        await updateScreenList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await updateScreenList();
+    }
+
+    private async Task updateScreenList()
+    {
+        _dbService = new LocalDbService();
+        incomeAndExpenses = await Task.Run(() => _dbService.GetExpenses());
+        roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
+        if (roadMaps.Any())
+        {
+            // Preselect the first RoadMap or any other logic to determine the preselected item
+            roadMapId = roadMaps.First().Id;
+        }
+    }
+
+}

@@ -1,0 +1,250 @@
+﻿@page "/forecast"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Financial_ForeCast.Models
+@using Financial_ForeCast.Services
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Account</MudText>
+                        <MudSelect @bind-Value="roadMapId" Label="RoadMaps">
+                            @foreach (var roadM in roadMaps)
+                            {
+                                <MudSelectItem Value="roadM.Id">@roadM.RoadMapName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudNumericField @bind-Value="@totalMonthsDisplay" Label="Months" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" HideSpinButtons="true" />
+                    <MudNumericField @bind-Value="@totalYearsDisplay" Label="Years" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" HideSpinButtons="true" />
+                    <MudList T="string" @bind-SelectedValues="SelectedValues" SelectionMode="SelectionMode.MultiSelection" Color="Color.Tertiary" Variant="Variant.Text" hidden="@notUseingStartingCashStack">
+
+                        <MudListItem Text="CashStacks">
+                            <NestedList>
+                                @foreach (Accnts accnts in Accnts)
+                                {
+                                    string displayName = accnts.AccountName +": "+ accnts.Amount.ToString();
+                                    <MudListItem Text="@displayName" Value="@accnts.Id.ToString()" />
+                                }
+                            </NestedList>
+                        </MudListItem>
+                    </MudList>
+                    <MudSwitch @bind-Value="@notUseingStartingCashStack" Color="Color.Info">No Starting Cash Stack</MudSwitch>
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="width:50%;" OnClick="@Calculate">Calculate</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="12" md="6" Style="height: 25vh">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Current Accounts</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTable Items="@GetCurrentPageForecasts()" RowsPerPage="12" Hover="true" Breakpoint="Breakpoint.None" LoadingProgressColor="Color.Info" Height="25vh" FixedHeader="true">
+                        <HeaderContent>
+                            <MudTh>Month</MudTh>
+                            <MudTh>Year</MudTh>
+                            <MudTh>Income</MudTh>
+                            <MudTh>Extra Income</MudTh>
+                            <MudTh>Total</MudTh>
+                            <MudTh>Cash Stack</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Month">@context.Month</MudTd>
+                            <MudTd DataLabel="Sign">@context.Year</MudTd>
+                            <MudTd DataLabel="Name">@String.Format("{0:0.00}", context.Income)</MudTd>
+                            <MudTd DataLabel="Position">@String.Format("{0:0.00}", context.ExtraIncome)</MudTd>
+                            <MudTd DataLabel="Total">@String.Format("{0:0.00}", context.Total)</MudTd>
+                            <MudTd DataLabel="Cash Stack">@String.Format("{0:0.00}", context.cashStack)</MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudButton OnClick="PreviousPage" Disabled="@prevPageActive">Previous</MudButton>
+                            <MudButton OnClick="NextPage" Disabled="@nextPageActive">Next</MudButton>
+                        </PagerContent>
+                    </MudTable>
+                </MudCardContent>
+
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private MudTable<Forecasts> _table;
+    private LocalDbService _dbService;
+    public IEnumerable<Accnts> Accnts = new List<Accnts>();
+    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
+    public List<Forecasts> forecasts = new List<Forecasts>();
+    public IReadOnlyCollection<string> SelectedValues;
+    public string[] monthAbbreviations = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+    int roadMapId;
+    public bool notUseingStartingCashStack = false;
+    public double startingCashStack;
+    public double savingsPerMonth;
+    public string totalYearsDisplay { get; set; }
+    public string totalMonthsDisplay { get; set; }
+    public int totalYears;
+    public int totalMonths;
+
+    private Dictionary<int, List<Forecasts>> forecastsByYear;
+    private int currentPage = 0;
+    private int totalPages = 0;
+    private bool prevPageActive = true;
+    private bool nextPageActive = false;
+
+    private void CheckIfButtonsActive()
+    {
+        prevPageActive = currentPage == 0 ? true : false;
+        nextPageActive = currentPage == totalPages - 1 ? true : false;
+    }
+
+    private void GroupForecastsByYear()
+    {
+        forecastsByYear = forecasts
+            .GroupBy(f => f.Year)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        totalPages = forecastsByYear.Count;
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages - 1)
+        {
+            currentPage++;
+        }
+        CheckIfButtonsActive();
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 0)
+        {
+            currentPage--;
+        }
+        CheckIfButtonsActive();
+    }
+
+    private List<Forecasts> GetCurrentPageForecasts()
+    {
+        if (forecastsByYear != null && forecastsByYear.Count > 0)
+        {
+            var year = forecastsByYear.Keys.ElementAt(currentPage);
+            return forecastsByYear[year];
+        }
+        return new List<Forecasts>();
+    }
+
+
+    public void RemoveAccount(MudBlazor.CellContext<Accnts> result)
+    {
+        // Implement the logic to remove the incomeExpense from the database
+        Task.Run(() => _dbService.RemoveAccount(result.Item.Id));
+        // Optionally, update the UI by removing the item from the list
+        Accnts = Accnts.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    public void CalculateStartingCashStack()
+    {
+        startingCashStack = 0;
+        foreach (var accnt in Accnts)
+        {
+            if (SelectedValues.Contains(accnt.Id.ToString()))
+            {
+                startingCashStack += accnt.Amount;
+            }
+        }
+    }
+    public void CalculateSavingsPerMonth()
+    {
+        savingsPerMonth = 0;
+        foreach (var savings in roadMaps)
+        {
+            savingsPerMonth += savings.RoadMapSavingAmount;
+        }
+    }
+
+    public void Calculate()
+    {
+        if (totalMonthsDisplay == null)
+        {
+            totalMonths = 0;
+        } else { totalMonths = Convert.ToInt32(totalMonthsDisplay); }
+        if (totalYearsDisplay == null)
+        {
+            totalYears = 0;
+        }
+        else { totalYears = Convert.ToInt32(totalYearsDisplay); }
+        forecasts.Clear();
+        DateTime today = DateTime.Today;
+        DateTime startDate = new DateTime(today.Year, today.Month,1);
+        DateTime endDate = new DateTime(today.Year, today.Month, 1).AddYears(totalYears).AddMonths(totalMonths);
+        if(!notUseingStartingCashStack)
+        {
+            CalculateStartingCashStack();
+        }
+        CalculateSavingsPerMonth();
+        double startingCash = notUseingStartingCashStack ? 0 : startingCashStack;
+        while (startDate != endDate)
+        {
+            int month = startDate.Month;
+            int year = startDate.Year;
+            startingCash += savingsPerMonth;
+            Forecasts forecast = new Forecasts
+                {
+                    Month = monthAbbreviations[month - 1],
+                    Year = year,
+                    cashStack = startingCash,
+                    Income = savingsPerMonth,
+                    ExtraIncome = 0,
+                    Total = startingCash
+                };
+            forecasts.Add(forecast);
+            startDate = startDate.AddMonths(1);
+        }
+        GroupForecastsByYear();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await updateScreenList();
+        GroupForecastsByYear();
+    }
+
+    private async Task updateScreenList()
+    {
+        _dbService = new LocalDbService();
+        Accnts = await Task.Run(() => _dbService.GetAccounts());
+        roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
+        if (roadMaps.Any())
+        {
+            // Preselect the first RoadMap or any other logic to determine the preselected item
+            roadMapId = roadMaps.First().Id;
+        }
+    }
+
+    private void updateForecast(CellContext<Forecasts> forcast)
+    {
+        int forcastIndex = forecasts.IndexOf(forcast.Item);
+        forecasts[forcastIndex].ExtraIncome = 100;
+    }
+
+    private void PageChanged(int i)
+    {
+        _table.NavigateTo(i - 1);
+        CheckIfButtonsActive();
+    }
+}

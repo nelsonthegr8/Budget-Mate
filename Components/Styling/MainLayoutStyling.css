@@ -1,0 +1,10 @@
+﻿.full-screen-drawer {
+    height: 100vh; /* Full viewport height */
+    width: 100vw; /* Full viewport width */
+    margin: 0;
+    padding: 0;
+    position: fixed; /* Ensure it stays anchored */
+    top: 0;
+    left: 0;
+    z-index: 1200; /* Ensure it stays above other elements */
+}

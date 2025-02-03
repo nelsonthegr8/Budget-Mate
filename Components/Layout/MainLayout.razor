@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+@* Needed for dialogs *@
+<MudDialogProvider />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+<MudLayout Style="padding-bottom: 60px;">
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudButton StartIcon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/"> Budget Mate </MudButton>
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" Style="full-screen-drawer">
+        <NavMenu/>
+    </MudDrawer>
+    <div Class="mt-0">
+        @Body
+    </div>
+</MudLayout>
+
+   
+@code {
+    bool _drawerOpen = false;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+}

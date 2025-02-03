@@ -1,0 +1,60 @@
+﻿@page "/roads"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Financial_ForeCast.Models
+@using Financial_ForeCast.Services
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8">
+
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Current Incomes</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudDataGrid Items="@roadMaps" SortMode="@SortMode.Single" Groupable="false" Height="25vh" FixedHeader="true">
+                        <Columns>
+                            <PropertyColumn Property="x => x.RoadMapName" />
+                            <PropertyColumn Property="x => x.RoadMapSavingAmount" />
+                            <TemplateColumn CellClass="d-flex justify-end">
+                                <CellTemplate Context="rMap">
+                                    <MudStack Row>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => RemoveRoadMap(rMap)">Delete</MudIconButton>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+@code {
+    private LocalDbService _dbService;
+    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
+
+    public void RemoveRoadMap(MudBlazor.CellContext<RoadMaps> result)
+    {
+        // Implement the logic to remove the incomeExpense from the database
+        Task.Run(() => _dbService.RemoveRoadMap(result.Item.Id));
+        // Optionally, update the UI by removing the item from the list
+        roadMaps = roadMaps.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await updateScreenList();
+    }
+
+    private async Task updateScreenList()
+    {
+        _dbService = new LocalDbService();
+        roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
+    }
+}

@@ -1,0 +1,151 @@
+﻿@page "/income"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Financial_ForeCast.Models
+@using Financial_ForeCast.Services
+@using System.Speech.Recognition
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Income</MudText>
+                        @* <MudSelect @bind-Value="roadMapId" Label="RoadMaps">
+                            @foreach (var roadM in roadMaps)
+                            {
+                                <MudSelectItem Value="roadM.Id">@roadM.RoadMapName</MudSelectItem>
+                            }
+                        </MudSelect> *@
+                        @* <MudGrid>
+                            <MudItem xs="3" sm="3" md="3"><MudIconButton Icon="@Icons.Material.Filled.Mic" Color="Color.Primary" aria-label="mic" /></MudItem>
+                            <MudItem xs="9" sm="9" md="9">
+                                <MudPaper Class="pa-4 mud-height-full">
+                                    <MudText Typo="Typo.subtitle2" @bind-Value="@VoiceToTxtValue">What You Say</MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid> *@
+                        @* <MudTextField T="string" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Mic" Text="@VoiceToTxtValue" OnAdornmentClick="@GetSpeechToText" >Text You Spoke</MudTextField> *@
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTextField @bind-Value="@BillExpenseName" Label="Income/Expense Name" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" />
+                    <MudNumericField @bind-Value="@AmountDisplay" Label="Amount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" HideSpinButtons ="true"/>
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="width:50%;" OnClick="@Save">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Current Incomes</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudDataGrid Items="@income" SortMode="@SortMode.Single" Groupable="false" Height="25vh" FixedHeader="true" Breakpoint="Breakpoint.None">
+                        <Columns>
+                            <PropertyColumn Property="x => x.Name" />
+                            <PropertyColumn Property="x => x.Amount" />
+                            <TemplateColumn CellClass="d-flex justify-end">
+                                <CellTemplate Context="income">
+                                    <MudStack Row>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => RemoveIncomeExpense(income)" >Delete</MudIconButton>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    // SpeechRecognitionEngine listener = new SpeechRecognitionEngine();
+    public string VoiceToTxtValue = "";
+    private LocalDbService _dbService;
+    public IEnumerable<IncomeExpense> income = new List<IncomeExpense>();
+    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
+    int roadMapId;
+    public string BillExpenseName { get; set; }
+    public string AmountDisplay { get; set; }
+    public double Amount { get; set; }
+
+    // private void GetSpeechToText()
+    // {
+    //     listener.RecognizeAsync(RecognizeMode.Multiple);
+
+    //     Task.Delay(5000).Wait();
+    //     listener.RecognizeAsyncStop();
+    // }
+
+    // private void Speech_recognized(object sender, SpeechRecognizedEventArgs e)
+    // {
+    //     VoiceToTxtValue = e.Result.Text;
+    // }
+
+    public void RemoveIncomeExpense(MudBlazor.CellContext<IncomeExpense> result)
+    {
+        // Implement the logic to remove the incomeExpense from the database
+        Task.Run(() => _dbService.RemoveByIncomeExpenseByID(result.Item.Id));
+        // Optionally, update the UI by removing the item from the list
+        income = income.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    public async Task Save()
+    {
+        if (AmountDisplay == null)
+        {
+            Amount = 0;
+        }
+        else
+        {
+            Amount = Convert.ToDouble(AmountDisplay);
+        }
+        var IncomeExpense = new IncomeExpense
+            {
+                RoadMapID = roadMapId,
+                Name = BillExpenseName,
+                Amount = Amount,
+                Type = "Income" 
+            };
+
+        await Task.Run(() => _dbService.AddIncomeExpense(IncomeExpense));
+
+        BillExpenseName = "";
+        AmountDisplay = "";
+
+        await updateScreenList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // listener.SetInputToDefaultAudioDevice();
+        // listener.LoadGrammarAsync(new DictationGrammar());
+        // listener.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(Speech_recognized);
+        await updateScreenList();
+    }
+
+    private async Task updateScreenList()
+    {
+        _dbService = new LocalDbService();
+        income = await Task.Run(() => _dbService.GetIncome());
+        roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
+        if (roadMaps.Any())
+        {
+            // Preselect the first RoadMap or any other logic to determine the preselected item
+            roadMapId = roadMaps.First().Id;
+        }
+    }
+
+}

@@ -1,0 +1,134 @@
+﻿@page "/accountvalues"
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Financial_ForeCast.Models
+@using Financial_ForeCast.Services
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Account</MudText>
+                        <MudSelect @bind-Value="roadMapId" Label="RoadMaps">
+                            @foreach (var roadM in roadMaps)
+                            {
+                                <MudSelectItem Value="roadM.Id">@roadM.RoadMapName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTextField @bind-Value="@AccountName" Label="Account Name" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" />
+                    <MudNumericField @bind-Value="@AmountDisplay" Label="Amount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" HideSpinButtons ="true"/>
+                    <MudSelect @bind-Value="selectedAccountType" Label="Account Type">
+                        @foreach (var account in accountTypes)
+                        {
+                            <MudSelectItem Value="@account">@account</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="width:50%;" OnClick="@Save">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="12" md="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Current Accounts</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudDataGrid Items="@Accnts" SortMode="@SortMode.Single" Groupable="false" Height="25vh" FixedHeader="true" Breakpoint="Breakpoint.None" Dense="true" ColumnWidthMode="Fixed" Style="width: 100%;" >
+                        <Columns>
+                            <PropertyColumn Property="x => x.AccountName" Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"  Sortable="false"/>
+                            <PropertyColumn Property="x => x.Amount" Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" Sortable="false" />
+                            @* <PropertyColumn Property="x => x.Type" Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" Sortable="false" /> *@
+                            <TemplateColumn Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" Sortable="false">
+                                <CellTemplate Context="account">
+                                    <MudStack Row>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => RemoveAccount(account)">Delete</MudIconButton>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private LocalDbService _dbService;
+    public IEnumerable<Accnts> Accnts = new List<Accnts>();
+    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
+    public string[] accountTypes = ["Savings","Checkings","Credit Card","Loan","Asset Value"];
+    public string selectedAccountType;
+    int roadMapId;
+    public string AccountName { get; set; }
+    public string AmountDisplay { get; set; }
+    public double Amount { get; set; }
+
+
+
+    public void RemoveAccount(MudBlazor.CellContext<Accnts> result)
+    {
+        // Implement the logic to remove the incomeExpense from the database
+        Task.Run(() => _dbService.RemoveAccount(result.Item.Id));
+        // Optionally, update the UI by removing the item from the list
+        Accnts = Accnts.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    public async Task Save()
+    {
+        if (AmountDisplay == null)
+        {
+            Amount = 0;
+        }
+        else
+        {
+            Amount = Convert.ToDouble(AmountDisplay);
+        }
+        var Account = new Accnts
+            {
+                RoadMapID = roadMapId,
+                AccountName = AccountName,
+                Amount = Amount,
+                Type = selectedAccountType,
+            };
+
+        await Task.Run(() => _dbService.AddAccount(Account));
+
+        AccountName = "";
+        AmountDisplay = "";
+
+        await updateScreenList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await updateScreenList();
+    }
+
+    private async Task updateScreenList()
+    {
+        _dbService = new LocalDbService();
+        Accnts = await Task.Run(() => _dbService.GetAccounts());
+        roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
+        if (roadMaps.Any())
+        {
+            // Preselect the first RoadMap or any other logic to determine the preselected item
+            roadMapId = roadMaps.First().Id;
+        }
+    }
+
+}
