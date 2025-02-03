@@ -59,7 +59,7 @@ namespace Financial_ForeCast
                     TenantId = builder.Configuration.GetValue<string>("AZURE_TENANT_ID")
                 });
 
-            var credential = new ApiKeyCredential("FQQ4d562GVKB0fQm6kIuLNVNhWzAtJlV3SKyVTAZiJafJCtpWEmHJQQJ99ALACYeBjFXJ3w3AAABACOGqh9e");//("A2d3bhrYB1mxqz8EIbjCkbfAOtbRjykYOqnrIhZKsZzfilzD9PAFJQQJ99ALACYeBjFXJ3w3AAAEACOGtlQs");
+            
             var credential2 = new ChainedTokenCredential(userAssignedIdentityCredential, azureDevCliCredential, visualStudioCredential, azureCliCredential);
             #endregion
 
