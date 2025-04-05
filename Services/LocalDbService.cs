@@ -3,6 +3,7 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,6 +20,26 @@ namespace Financial_ForeCast.Services
             _connection.CreateTableAsync<IncomeExpense>();
             _connection.CreateTableAsync<RoadMaps>();
             _connection.CreateTableAsync<Accnts>();
+            _connection.CreateTableAsync<MainMenuCards>();
+           initializeMainMenuCards();
+        }
+        // Main Menu Cards
+        private async void initializeMainMenuCards() 
+        {
+            // Check if table is empty before inserting
+            var count = await _connection.Table<MainMenuCards>().CountAsync();
+            if (count == 0)
+            {
+                var initialData = new List<MainMenuCards>
+                {
+                    new MainMenuCards { CardName = "Income", MenuLink = "/income", TotalAmount = 0 },
+                    new MainMenuCards { CardName = "Expenses", MenuLink = "/expense", TotalAmount = 0 },
+                    new MainMenuCards { CardName = "Financial Forecast", MenuLink = "/forecast", TotalAmount = 0 },
+                    new MainMenuCards {CardName = "Budget Mate", MenuLink = "Go to home screen", TotalAmount = 0}
+                };
+
+                await _connection.InsertAllAsync(initialData);
+            }
         }
         // Income And Expense 
         public async Task<List<IncomeExpense>> GetAllIncomesAndExpenses()

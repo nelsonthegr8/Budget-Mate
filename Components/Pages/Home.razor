@@ -6,7 +6,7 @@
 
 <MudContainer Class="mt-16">
     <MudGrid Class="mt-8">
-        @*Test Itterative Cards*@
+        @*Itterative Cards*@
         @foreach (var item in cards)
         {
             <MudItem xs="6" sm="6" md="4">
@@ -39,130 +39,7 @@
                 </MudLink>
             </MudItem>
         }
-        @*
-        1st Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/accountvalues" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Net Worth</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent Style="height: auto">
-
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-center justify-center mud-height-full py-4">
-                                <MudText Typo="Typo.h4">@nwTotalDisplay</MudText>
-                            </div>
-                            <div class="d-flex align-center my-1">
-                                <MudAvatar Class="me-2 pa-4" Style="@nwBgIconColor" Size="Size.Small">
-                                    <MudIcon Color="@nwIconColor" Icon="@networthIcon" Size="Size.Small" />
-                                </MudAvatar>
-                                <MudText Typo="Typo.subtitle2">@nwpercentDisplay</MudText>
-                            </div>
-
-                        </div>
-
-
-                    </MudCardContent>
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        2nd Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/income" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Income</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent>
-
-                        <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center" Style="height: 15vh">
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.h6">Income Per Month</MudText>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="background-color: var(--mud-palette-success-hover);" Size="Size.Medium">
-                                        <MudIcon Color="Color.Success" Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Medium" />
-                                    </MudAvatar>
-                                </div>
-                            </div>
-                            <div class="d-flex align-end justify-end mud-height-full py-8" >
-                                <MudText Typo="Typo.h6" Color="Color.Success">@incomeDisplay</MudText>
-                            </div>
-                        </MudPaper>
-
-                    </MudCardContent>
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        3rd Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/expense" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Expenses</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent>
-
-                        <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center">
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.h6">Expenses Per Month</MudText>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="background-color: var(--mud-palette-error-hover);" Size="Size.Medium">
-                                        <MudIcon Color="Color.Error" Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Medium" />
-                                    </MudAvatar>
-                                </div>
-                            </div>
-                            <div class="d-flex align-end justify-end mud-height-full py-8">
-                                <MudText Typo="Typo.h4" Color="Color.Error">@expensesDisplay</MudText>
-                            </div>
-                        </MudPaper>
-
-                    </MudCardContent>
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        4th Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/forecast" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Financial Forecast</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent>
-
-                        <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center">
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.h6">Savings Per Month</MudText>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="@ffBgIconColor" Size="Size.Small">
-                                        <MudIcon Color="@ffIconColor" Icon="@ffIcon" Size="Size.Small" />
-                                    </MudAvatar>
-                                    <MudText Typo="Typo.subtitle2">@ffpercentDisplay</MudText>
-                                </div>
-                            </div>
-                            <div class="d-flex align-end justify-end mud-height-full py-8">
-                                <MudText Typo="Typo.h4">@ffsTotalDisplay</MudText>
-                            </div>
-                        </MudPaper>
-
-                    </MudCardContent>
-
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        *@
+        
     </MudGrid>
 </MudContainer>
 
