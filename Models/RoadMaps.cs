@@ -24,6 +24,7 @@ namespace Financial_ForeCast.Models
         public double NetWorth { get; set; }
         [Column("PrevNetWorth")]
         public double PrevNetWorth { get; set; }
+        public bool isSelected { get; set; } = false;
     }
     
 }

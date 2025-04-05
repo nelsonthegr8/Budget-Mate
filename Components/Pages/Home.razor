@@ -4,17 +4,17 @@
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
 
-<MudContainer Class="mt-16">
+@* <MudContainer Class="mt-16">
     <MudGrid Class="mt-8">
-        @*Test Itterative Cards*@
-        @foreach (var item in cards)
+        @*Test Itterative Cards
+        @foreach (var item in mainMenuCards)
         {
             <MudItem xs="6" sm="6" md="4">
-                <MudLink Href="@item.Value" Underline="Underline.None">
+                <MudLink Href="@item.Link" Underline="Underline.None">
                     <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
                         <MudCardHeader>
                             <CardHeaderContent>
-                                <MudText Typo="Typo.h5" Align="Align.Center">@item.Key</MudText>
+                                <MudText Typo="Typo.h5" Align="Align.Center">@item.Name</MudText>
                             </CardHeaderContent>
                         </MudCardHeader>
 
@@ -22,232 +22,69 @@
 
                             <div class="flex-grow-1">
                                 <div class="d-flex align-center justify-center mud-height-full py-4">
-                                    <MudText Typo="Typo.h4">@nwTotalDisplay</MudText>
+                                    <MudText Typo="Typo.h4">@item.Amount</MudText>
                                 </div>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="@nwBgIconColor" Size="Size.Small">
-                                        <MudIcon Color="@nwIconColor" Icon="@networthIcon" Size="Size.Small" />
-                                    </MudAvatar>
-                                    <MudText Typo="Typo.subtitle2">@nwpercentDisplay</MudText>
-                                </div>
-
+                                @*Pass through section brain storm what that might look like dont know yet
                             </div>
-
 
                         </MudCardContent>
                     </MudCard>
                 </MudLink>
             </MudItem>
         }
-        @*
-        1st Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/accountvalues" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Net Worth</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent Style="height: auto">
-
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-center justify-center mud-height-full py-4">
-                                <MudText Typo="Typo.h4">@nwTotalDisplay</MudText>
-                            </div>
-                            <div class="d-flex align-center my-1">
-                                <MudAvatar Class="me-2 pa-4" Style="@nwBgIconColor" Size="Size.Small">
-                                    <MudIcon Color="@nwIconColor" Icon="@networthIcon" Size="Size.Small" />
-                                </MudAvatar>
-                                <MudText Typo="Typo.subtitle2">@nwpercentDisplay</MudText>
-                            </div>
-
-                        </div>
-
-
-                    </MudCardContent>
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        2nd Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/income" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Income</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent>
-
-                        <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center" Style="height: 15vh">
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.h6">Income Per Month</MudText>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="background-color: var(--mud-palette-success-hover);" Size="Size.Medium">
-                                        <MudIcon Color="Color.Success" Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Medium" />
-                                    </MudAvatar>
-                                </div>
-                            </div>
-                            <div class="d-flex align-end justify-end mud-height-full py-8" >
-                                <MudText Typo="Typo.h6" Color="Color.Success">@incomeDisplay</MudText>
-                            </div>
-                        </MudPaper>
-
-                    </MudCardContent>
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        3rd Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/expense" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Expenses</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent>
-
-                        <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center">
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.h6">Expenses Per Month</MudText>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="background-color: var(--mud-palette-error-hover);" Size="Size.Medium">
-                                        <MudIcon Color="Color.Error" Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Medium" />
-                                    </MudAvatar>
-                                </div>
-                            </div>
-                            <div class="d-flex align-end justify-end mud-height-full py-8">
-                                <MudText Typo="Typo.h4" Color="Color.Error">@expensesDisplay</MudText>
-                            </div>
-                        </MudPaper>
-
-                    </MudCardContent>
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        4th Card
-        <MudItem xs="6" sm="6" md="4">
-            <MudLink Href="/forecast" Underline="Underline.None">
-                <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Financial Forecast</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-
-                    <MudCardContent>
-
-                        <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center">
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.h6">Savings Per Month</MudText>
-                                <div class="d-flex align-center my-1">
-                                    <MudAvatar Class="me-2 pa-4" Style="@ffBgIconColor" Size="Size.Small">
-                                        <MudIcon Color="@ffIconColor" Icon="@ffIcon" Size="Size.Small" />
-                                    </MudAvatar>
-                                    <MudText Typo="Typo.subtitle2">@ffpercentDisplay</MudText>
-                                </div>
-                            </div>
-                            <div class="d-flex align-end justify-end mud-height-full py-8">
-                                <MudText Typo="Typo.h4">@ffsTotalDisplay</MudText>
-                            </div>
-                        </MudPaper>
-
-                    </MudCardContent>
-
-                </MudCard>
-            </MudLink>
-        </MudItem>
-        *@
     </MudGrid>
+</MudContainer> *@
+
+<MudContainer Class="mt-16">
+    @if (isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+    }
+    else
+    {
+        <MudGrid Class="mt-8">
+            @foreach (var item in mainMenuCards)
+            {
+                <MudItem xs="6" sm="6" md="4">
+                    <MudLink Href="@item.Link" Underline="Underline.None">
+                        <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h5" Align="Align.Center">@item.Name</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+
+                            <MudCardContent Style="height: auto">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-center justify-center mud-height-full py-4">
+                                        <MudText Typo="Typo.h4">@item.Amount</MudText>
+                                    </div>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudLink>
+                </MudItem>
+            }
+        </MudGrid>
+    }
 </MudContainer>
 
 @code {
-    public Dictionary<string, string> cards = new Dictionary<string, string> { { "Net Worth", "/accountvalues" },
-                                                                               { "Income", "/income" },
-                                                                               { "Expenses", "/expense" },
-                                                                               { "Financial Forecast", "/forecast" },};
-    public string ffsTotalDisplay = "";
-    public string ffpercentDisplay = "";
-    public string ffBgIconColor = "";
-    public Color ffIconColor;
-    public string ffIcon = "";
-    public bool isffIncrease;
-
-    public string nwTotalDisplay = "";
-    public string nwpercentDisplay = "";
-    public string nwBgIconColor = "";
-    public Color  nwIconColor;
-    public string networthIcon = "";
-    public bool isnwIncrease;
-
-    public string expensesDisplay = "";
-    public string incomeDisplay = "";
     
-    public double savingsTotal;
-    public double prevSavingTotal;
-    public double savingsPercentage;
-    public double expenses;
-    public double income;
-    public double netWorth = 0.0;
-    public double prevNetWorth;
-    public double netWorthPercentage;
-    
-   
-
+    public List<MainMenuCards> mainMenuCards;
     private LocalDbService _dbService;
-    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
-    public IEnumerable<IncomeExpense> incomeExpenses = new List<IncomeExpense>();
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         await updateScreenList();
+        isLoading = false;
     }
 
     private async Task updateScreenList()
     {
         _dbService = new LocalDbService();
-        roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
-        incomeExpenses = await Task.Run(() => _dbService.GetAllIncomesAndExpenses());
-        CalculateSavingsTotal();
+        mainMenuCards = await _dbService.GetMainMenuCards();
     }
 
-    private void CalculateSavingsTotal()
-    {
-        foreach (RoadMaps r in roadMaps)
-        {
-            savingsTotal += r.RoadMapSavingAmount;
-            prevSavingTotal += r.RoadMapPrevSavingAmount;
-            netWorth += r.NetWorth;
-            prevNetWorth += r.PrevNetWorth;
-        }
-        foreach (IncomeExpense ie in incomeExpenses)
-        {
-            income += ie.Type == "Income" ? ie.Amount : 0; 
-            expenses += ie.Type == "Expense" ? ie.Amount : 0;
-        }
-        //
-        savingsPercentage = savingsTotal >= prevSavingTotal ? (savingsTotal / prevSavingTotal == 0 ? savingsTotal : prevSavingTotal) * 100 : (prevSavingTotal / savingsTotal == 0 ? prevSavingTotal : savingsTotal) * 100;
-        netWorthPercentage = netWorth >= prevNetWorth ? (netWorth / prevNetWorth == 0 ? netWorth : prevNetWorth) * 100 : (prevNetWorth / netWorth == 0 ? prevNetWorth : netWorth) * 100;
-        expensesDisplay = "$" + String.Format("{0:0.00}", expenses).ToString();
-        incomeDisplay = "$" + String.Format("{0:0.00}", income).ToString();
-        //
-        isffIncrease = savingsTotal >= prevSavingTotal ? true : false;
-        ffIcon = isffIncrease ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown;
-        ffsTotalDisplay = "$" + String.Format("{0:0.00}", savingsTotal).ToString();
-        ffpercentDisplay = (isffIncrease ? "+" : "-") + Math.Round(savingsPercentage) + "%";
-        ffBgIconColor = isffIncrease ? "background-color: var(--mud-palette-success-hover);" : "background-color: var(--mud-palette-error-hover);";
-        ffIconColor = isffIncrease ? Color.Success : Color.Error;
-        //
-        isnwIncrease = netWorth >= prevNetWorth ? true : false;
-        networthIcon = isnwIncrease ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown;
-        nwTotalDisplay = "$" + String.Format("{0:0.00}", netWorth).ToString();
-        nwpercentDisplay = (isnwIncrease ? "+" : "-") + Math.Round(netWorthPercentage) + "%";
-        nwBgIconColor = isnwIncrease ? "background-color: var(--mud-palette-success-hover);" : "background-color: var(--mud-palette-error-hover);";
-        nwIconColor = isnwIncrease ? Color.Success : Color.Error;
-    }
 }

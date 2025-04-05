@@ -12,6 +12,10 @@ namespace Financial_ForeCast.Services
     {
         private const string DB_NAME = "FinancialForeCast.db";
         private readonly SQLiteAsyncConnection _connection;
+        public Dictionary<string, string> cards = new Dictionary<string, string> { { "Net Worth", "/accountvalues" },
+                                                                               { "Income", "/income" },
+                                                                               { "Expenses", "/expense" },
+                                                                               { "Financial Forecast", "/forecast" },};
 
         public LocalDbService()
         {
@@ -19,7 +23,60 @@ namespace Financial_ForeCast.Services
             _connection.CreateTableAsync<IncomeExpense>();
             _connection.CreateTableAsync<RoadMaps>();
             _connection.CreateTableAsync<Accnts>();
+            _connection.CreateTableAsync<MainMenuCards>();
         }
+        // Main Menu Cards Section
+        public async Task<List<MainMenuCards>> GetMainMenuCards()
+        {
+            var result = await _connection.Table<MainMenuCards>().ToListAsync();
+            if (result.Count == 0)
+            {
+                foreach (var card in cards)
+                {
+                    var nCard = new MainMenuCards { Name = card.Key, Link = card.Value, Amount = 0, Passthrough = "{}" };
+                    await AddMainMenuCard(nCard);
+                    result.Add(nCard);
+                }
+            }
+            GenerateCardCalculations(result);
+            return result;
+        }
+        public async Task AddMainMenuCard(MainMenuCards card)
+        {
+            await _connection.InsertAsync(card);
+        }
+        public async Task UpdateMainMenuCard(MainMenuCards card)
+        {
+            await _connection.UpdateAsync(card);
+        }
+        public async void GenerateCardCalculations(List<MainMenuCards> cards)
+        {
+            foreach (var card in cards) 
+            {
+
+                if (card.Name == "Net Worth")
+                {
+                    var netWorth = await GetRoadMapNetWorthSum(await GetSelectedRoadMapID());
+                    card.Amount = netWorth;
+                    await UpdateMainMenuCard(card);
+                }
+                else if (card.Name == "Income")
+                {
+                    var income = await GetIncome();
+                    double totalIncome = income.Sum(x => x.Amount);
+                    card.Amount = totalIncome;
+                    await UpdateMainMenuCard(card);
+                }
+                else if (card.Name == "Expenses")
+                {
+                    var expenses = await GetExpenses();
+                    double totalExpenses = expenses.Sum(x => x.Amount);
+                    card.Amount = totalExpenses;
+                    await UpdateMainMenuCard(card);
+                }
+            }
+        }
+        // End of Main Menu Cards Section
         // Income And Expense 
         public async Task<List<IncomeExpense>> GetAllIncomesAndExpenses()
         {
@@ -77,13 +134,14 @@ namespace Financial_ForeCast.Services
         {
             await _connection.UpdateAsync(incomeExpense);
         }
+        // End of Income And Expense Section
         // RoadMap 
         public async Task<List<RoadMaps>> GetRoadMaps()
         {
             var result = await _connection.Table<RoadMaps>().ToListAsync();
             if (result.Count == 0)
             {
-                var nRoadMap = new RoadMaps { RoadMapName = "Default", RoadMapSavingAmount = 0 };
+                var nRoadMap = new RoadMaps { RoadMapName = "Default", RoadMapSavingAmount = 0 , isSelected = true};
                 await AddRoadMap(nRoadMap);
                 result.Add(nRoadMap);
             }
@@ -129,6 +187,14 @@ namespace Financial_ForeCast.Services
 
             }
         }
+        public async Task<int> GetSelectedRoadMapID()
+        {
+            var result = await _connection.Table<RoadMaps>().Where(x => x.isSelected == true).FirstOrDefaultAsync();
+            int roadMapID = result == null ? 0 : result.Id;
+
+            return roadMapID;
+        }
+        //End of RoadMap Section
         // Account 
         public async Task<List<Accnts>> GetAccounts()
         {
@@ -153,6 +219,7 @@ namespace Financial_ForeCast.Services
                 await UpdateRoadNetWorthAmount(accnt.RoadMapID, roadMapNetWorthAmount);
             }
         }
+        //End of Account Section
 
     }
 }

@@ -6,5 +6,4 @@
     }
   },
   "EnvironmentMode": "local",
-  "AZURE_OPENAI_ENDPOINT": "https://nelsonopenaitest.openai.azure.com/" //"https://aitestingnew.cognitiveservices.azure.com/"
 }
