@@ -4,37 +4,6 @@
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
 
-@* <MudContainer Class="mt-16">
-    <MudGrid Class="mt-8">
-        @*Test Itterative Cards
-        @foreach (var item in mainMenuCards)
-        {
-            <MudItem xs="6" sm="6" md="4">
-                <MudLink Href="@item.Link" Underline="Underline.None">
-                    <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                        <MudCardHeader>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h5" Align="Align.Center">@item.Name</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-
-                        <MudCardContent Style="height: auto">
-
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-center justify-center mud-height-full py-4">
-                                    <MudText Typo="Typo.h4">@item.Amount</MudText>
-                                </div>
-                                @*Pass through section brain storm what that might look like dont know yet
-                            </div>
-
-                        </MudCardContent>
-                    </MudCard>
-                </MudLink>
-            </MudItem>
-        }
-    </MudGrid>
-</MudContainer> *@
-
 <MudContainer Class="mt-16">
     @if (isLoading)
     {
@@ -77,14 +46,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await updateScreenList();
+        _dbService = new LocalDbService();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        mainMenuCards = await _dbService.GetMainMenuCards();
         isLoading = false;
     }
-
-    private async Task updateScreenList()
-    {
-        _dbService = new LocalDbService();
-        mainMenuCards = await _dbService.GetMainMenuCards();
-    }
-
 }

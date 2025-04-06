@@ -16,6 +16,7 @@ namespace Financial_ForeCast.Services
                                                                                { "Income", "/income" },
                                                                                { "Expenses", "/expense" },
                                                                                { "Financial Forecast", "/forecast" },};
+        public string[] monthAbbreviations = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 
         public LocalDbService()
         {
@@ -38,8 +39,9 @@ namespace Financial_ForeCast.Services
                     result.Add(nCard);
                 }
             }
-            GenerateCardCalculations(result);
-            return result;
+            var updatedCards = await GenerateCardCalculations(result);
+
+            return updatedCards;
         }
         public async Task AddMainMenuCard(MainMenuCards card)
         {
@@ -49,7 +51,7 @@ namespace Financial_ForeCast.Services
         {
             await _connection.UpdateAsync(card);
         }
-        public async void GenerateCardCalculations(List<MainMenuCards> cards)
+        public async Task<List<MainMenuCards>> GenerateCardCalculations(List<MainMenuCards> cards)
         {
             foreach (var card in cards) 
             {
@@ -75,6 +77,8 @@ namespace Financial_ForeCast.Services
                     await UpdateMainMenuCard(card);
                 }
             }
+
+            return cards;
         }
         // End of Main Menu Cards Section
         // Income And Expense 
@@ -220,6 +224,41 @@ namespace Financial_ForeCast.Services
             }
         }
         //End of Account Section
-
+        //Forecast Section
+        public async Task<List<Forecasts>> GetForecasts()
+        {
+            var result = await _connection.Table<Forecasts>().ToListAsync();
+            return result;
+        }
+        public async Task AddForecasts(List<Forecasts> forecast)
+        {
+            await _connection.InsertAsync(forecast);
+        }
+        public async Task RemoveForecasts(string forecastName)
+        {
+            var forecast = await _connection.Table<Forecasts>().Where(x => x.ForcastName == forecastName).ToListAsync();
+            if (forecast != null)
+            {
+                await _connection.DeleteAsync(forecast);
+            }
+        }
+        public async Task UpdateForecasts(Forecasts forecast)
+        {
+            await _connection.UpdateAsync(forecast);
+        }
+        public async Task<List<Forecasts>> GetForecastsByName(string forecastName)
+        {
+            var result = await _connection.Table<Forecasts>().Where(x => x.ForcastName == forecastName).ToListAsync();
+            return result;
+        }
+        public async Task<List<Forecasts>> GetForecastsByCurrentMonthAndYear()
+        {
+            DateTime today = DateTime.Today;
+            string month = monthAbbreviations[today.Month - 1];
+            int Year = today.Year;
+            var result = await _connection.Table<Forecasts>().Where(x => x.Month == month && x.Year == Year).ToListAsync();
+            return result;
+        }
+        //End of Forecast Section
     }
 }
