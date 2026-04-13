@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Financial_ForeCast.Services
 {
-    public class LocalDbService
+    public class LocalDbService : IDbService
     {
         private const string DB_NAME = "FinancialForeCast.db";
         private readonly SQLiteAsyncConnection _connection;
