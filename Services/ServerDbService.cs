@@ -1,52 +1,41 @@
 using Financial_ForeCast.Models;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace Financial_ForeCast.Services
 {
     public class ServerDbService : BaseDbService
     {
-        private readonly HttpClient _client;
-        public ServerDbService(HttpClient client)
+    private readonly string _connectionString;
+    public ServerDbService(string connectionString)
+    {
+        _connectionString = connectionString;
+    }
+
+    private SQLiteConnection CreateConnection()
+    {
+        var conn = new SQLiteConnection(_connectionString);
+        conn.Open();
+        return conn;
+    }
+
+    private async Task<T> QueryAsync<T>(string sql, Func<SQLiteDataReader, T> readerFunc)
+    {
+        using var conn = CreateConnection();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        using var reader = await cmd.ExecuteReaderAsync();
+        var results = new List<object>();
+        while (await reader.ReadAsync())
         {
-            _client = client;
+            results.Add(readerFunc(reader));
         }
-
-        // Helper to perform GET and deserialize
-        private async Task<T> GetAsync<T>(string url)
-        {
-            var response = await _client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions{PropertyNameCaseInsensitive=true});
-        }
-
-        private async Task PostAsync<T>(string url, T payload)
-        {
-            var json = JsonSerializer.Serialize(payload);
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync(url, content);
-            response.EnsureSuccessStatusCode();
-        }
-
-        // Implement all IDbService methods using server endpoints
-        public override Task<List<MainMenuCards>> GetMainMenuCards()
-            => GetAsync<List<MainMenuCards>>("/api/mainmenu");
-
-        public override async Task AddMainMenuCard(MainMenuCards card)
-            => await PostAsync("/api/mainmenu", card);
-
-        public override async Task UpdateMainMenuCard(MainMenuCards card)
-            => await PostAsync($"/api/mainmenu/{card.Id}", card);
-
-        public override Task<List<MainMenuCards>> GenerateCardCalculations(List<MainMenuCards> cards)
-            { throw new NotImplementedException(); }
-
-        public override Task<List<IncomeExpense>> GetAllIncomesAndExpenses()
-            => GetAsync<List<IncomeExpense>>("/api/incomeexpense/all");
+        // assuming T is List<...>
+        return (T)(object)results;
+    }
 
         public override Task<List<IncomeExpense>> GetIncome()
             => GetAsync<List<IncomeExpense>>("/api/incomeexpense/income");

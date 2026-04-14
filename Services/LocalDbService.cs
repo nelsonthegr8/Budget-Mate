@@ -8,15 +8,11 @@ using System.Threading.Tasks;
 
 namespace Financial_ForeCast.Services
 {
-    public class LocalDbService : IDbService
+    public class LocalDbService : BaseDbService
     {
         private const string DB_NAME = "FinancialForeCast.db";
         private readonly SQLiteAsyncConnection _connection;
-        public Dictionary<string, string> cards = new Dictionary<string, string> { { "Net Worth", "/accountvalues" },
-                                                                               { "Income", "/income" },
-                                                                               { "Expenses", "/expense" },
-                                                                               { "Financial Forecast", "/forecast" },};
-        public string[] monthAbbreviations = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+        
 
         public LocalDbService()
         {
