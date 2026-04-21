@@ -71,6 +71,9 @@
       <Content Include="Resources\appsettings.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+      <Content Include="appsettings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <ItemGroup>
@@ -91,6 +94,12 @@
         <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
         <PackageReference Include="System.Private.Uri" Version="4.3.2" />
         <PackageReference Include="System.Speech" Version="9.0.0" />
+        
+        <!-- Database providers for server mode (install as needed) -->
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+        <PackageReference Include="Npgsql" Version="8.0.5" />
+        <PackageReference Include="MySql.Data" Version="9.1.0" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
     </ItemGroup>
 
 </Project>
