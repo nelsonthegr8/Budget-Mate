@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui;
 using Financial_ForeCast.Services;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
@@ -7,7 +7,6 @@ using Azure.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Azure;
 using System.ClientModel;
-using Microsoft.Extensions.Configuration;
 
 namespace Financial_ForeCast
 {
@@ -16,6 +15,10 @@ namespace Financial_ForeCast
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+            
+            // Load appsettings.json for configuration
+            builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            
             builder
                 .UseMauiApp<App>()
                 // Initialize the .NET MAUI Community Toolkit by adding the below line of code
@@ -26,7 +29,12 @@ namespace Financial_ForeCast
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
-            builder.Services.AddSingleton<LocalDbService>();
+
+            // Database Service Registration - Factory pattern for switching between Local/Server
+            builder.Services.AddSingleton<DbServiceFactory>();
+            builder.Services.AddScoped<IDbService>(factory => 
+                factory.GetRequiredService<DbServiceFactory>().GetService());
+
             builder.Services.AddMauiBlazorWebView();
 
             // Uncomment for vanilla OpenAI (non azure)
@@ -36,7 +44,7 @@ namespace Financial_ForeCast
             // });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
             builder.Services.AddMudServices();
             return builder.Build();
