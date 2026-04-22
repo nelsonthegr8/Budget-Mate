@@ -26,7 +26,10 @@ namespace Financial_ForeCast
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
-            builder.Services.AddSingleton<LocalDbService>();
+            builder.Services.AddSingleton<DbServiceFactory>();
+            builder.Services.AddSingleton<ConnectivityService>();
+            builder.Services.AddSingleton<BackupSyncService>();
+            builder.Services.AddSingleton<DbServiceProvider>();
             builder.Services.AddMauiBlazorWebView();
 
             // Uncomment for vanilla OpenAI (non azure)

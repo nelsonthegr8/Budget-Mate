@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
+@inject DbServiceProvider _dbProvider
 
 <MudContainer Class="mt-16">
     <MudGrid Class="mt-8">
@@ -93,8 +94,8 @@
 </MudContainer>
 
 @code {
+    private IDbService _dbService => _dbProvider.Current;
     private MudTable<Forecasts> _table;
-    private LocalDbService _dbService;
     public IEnumerable<Accnts> Accnts = new List<Accnts>();
     public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
     public List<Forecasts> forecasts = new List<Forecasts>();
@@ -126,7 +127,6 @@
 
     private async Task updateScreenList()
     {
-        _dbService = new LocalDbService();
         Accnts = await Task.Run(() => _dbService.GetAccounts());
         roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
         if (roadMaps.Any())
@@ -246,7 +246,7 @@
             startingCash += savingsPerMonth;
             Forecasts forecast = new Forecasts()
                 {
-                    Month = _dbService.monthAbbreviations[month - 1],
+                    Month = _dbService.MonthAbbreviations[month - 1],
                     Year = year,
                     cashStack = startingCash,
                     Income = savingsPerMonth,

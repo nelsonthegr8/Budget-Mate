@@ -3,9 +3,10 @@
 @using System.ComponentModel.DataAnnotations
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
+@inject DbServiceProvider _dbProvider
 
 
-<MudContainer Class="mt-16">
+<MudContainer>
     <MudGrid Class="mt-8">
         <MudItem xs="12" sm="12" md="6">
             <MudCard Elevation="25" Class="rounded-lg pb-4">
@@ -62,8 +63,8 @@
 </MudContainer>
 
 @code {
-    private LocalDbService _dbService;
-    public IEnumerable<IncomeExpense> incomeAndExpenses = new List<IncomeExpense>();
+    private IDbService _dbService => _dbProvider.Current;
+    public IEnumerable<IncomeExpense> incomeAndExpenses;
     public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
     int roadMapId;
     public string BillExpenseName { get; set; }
@@ -111,7 +112,6 @@
 
     private async Task updateScreenList()
     {
-        _dbService = new LocalDbService();
         incomeAndExpenses = await Task.Run(() => _dbService.GetExpenses());
         roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
         if (roadMaps.Any())

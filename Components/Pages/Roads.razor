@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
+@inject DbServiceProvider _dbProvider
 
 <MudContainer Class="mt-16">
     <MudGrid Class="mt-8">
@@ -36,8 +37,8 @@
     </MudGrid>
 </MudContainer>
 @code {
-    private LocalDbService _dbService;
-    public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
+    private IDbService _dbService => _dbProvider.Current;
+    public IEnumerable<RoadMaps> roadMaps;
 
     public void RemoveRoadMap(MudBlazor.CellContext<RoadMaps> result)
     {
@@ -54,7 +55,6 @@
 
     private async Task updateScreenList()
     {
-        _dbService = new LocalDbService();
         roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
     }
 }

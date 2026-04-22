@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
+@inject DbServiceProvider _dbProvider
 
 <MudContainer Class="mt-16">
     <MudGrid Class="mt-8">
@@ -68,8 +69,8 @@
 </MudContainer>
 
 @code {
-    private LocalDbService _dbService;
-    public IEnumerable<Accnts> Accnts = new List<Accnts>();
+    private IDbService _dbService => _dbProvider.Current;
+    public IEnumerable<Accnts> Accnts;
     public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
     public string[] accountTypes = ["Savings","Checkings","Credit Card","Loan","Asset Value"];
     public string selectedAccountType;
@@ -121,7 +122,6 @@
 
     private async Task updateScreenList()
     {
-        _dbService = new LocalDbService();
         Accnts = await Task.Run(() => _dbService.GetAccounts());
         roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
         if (roadMaps.Any())

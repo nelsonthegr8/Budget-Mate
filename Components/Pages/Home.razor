@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
+@inject DbServiceProvider _dbProvider
 
 <MudContainer Class="mt-16">
     @if (isLoading)
@@ -40,13 +41,12 @@
 
 @code {
     
+    private IDbService _dbService => _dbProvider.Current;
     public List<MainMenuCards> mainMenuCards;
-    private LocalDbService _dbService;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        _dbService = new LocalDbService();
         await LoadData();
     }
 

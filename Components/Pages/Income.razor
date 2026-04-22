@@ -4,6 +4,7 @@
 @using Financial_ForeCast.Models
 @using Financial_ForeCast.Services
 @using System.Speech.Recognition
+@inject DbServiceProvider _dbProvider
 
 <MudContainer Class="mt-16">
     <MudGrid Class="mt-8">
@@ -72,9 +73,9 @@
 
 @code {
     // SpeechRecognitionEngine listener = new SpeechRecognitionEngine();
+    private IDbService _dbService => _dbProvider.Current;
     public string VoiceToTxtValue = "";
-    private LocalDbService _dbService;
-    public IEnumerable<IncomeExpense> income = new List<IncomeExpense>();
+    public IEnumerable<IncomeExpense> income;
     public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
     int roadMapId;
     public string BillExpenseName { get; set; }
@@ -138,7 +139,6 @@
 
     private async Task updateScreenList()
     {
-        _dbService = new LocalDbService();
         income = await Task.Run(() => _dbService.GetIncome());
         roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
         if (roadMaps.Any())

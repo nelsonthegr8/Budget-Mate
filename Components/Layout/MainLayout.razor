@@ -1,4 +1,10 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@using Financial_ForeCast.Services
+@inject DbServiceProvider _dbProvider
+@inject ConnectivityService _connectivity
+@inject BackupSyncService _backupSync
+@inject ISnackbar Snackbar
+@implements IDisposable
 @* Required *@
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -9,10 +15,18 @@
 @* Needed for snackbars *@
 <MudSnackbarProvider />
 
-<MudLayout Style="padding-bottom: 60px;">
+<MudLayout>
     <MudAppBar>
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudButton StartIcon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/"> Budget Mate </MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/">Budget Mate</MudButton>
+        @if (_dbProvider.IsOfflineMode)
+        {
+            <MudChip T="string" Color="Color.Warning" Size="Size.Small" Class="ml-2">Offline</MudChip>
+        }
+        else if (_hasRemoteConfig)
+        {
+            <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-2">Online</MudChip>
+        }
     </MudAppBar>
     <MudDrawer @bind-Open="@_drawerOpen" Style="full-screen-drawer">
         <NavMenu/>
@@ -22,13 +36,54 @@
     </div>
 </MudLayout>
 
-   
+
 @code {
     bool _drawerOpen = false;
+    bool _hasRemoteConfig = false;
+
+    protected override void OnInitialized()
+    {
+        _hasRemoteConfig = _connectivity.HasRemoteConfig;
+        _dbProvider.OnModeChanged += HandleModeChanged;
+        _backupSync.OnBackupStatusChanged += HandleBackupStatus;
+    }
+
+    private void HandleModeChanged(bool isOnline)
+    {
+        InvokeAsync(() =>
+        {
+            _hasRemoteConfig = _connectivity.HasRemoteConfig;
+            if (isOnline)
+            {
+                var message = "Back Online: Connection to the remote database has been restored.";
+                if (BackupSyncService.IsPushOnReconnect())
+                    message += " Local data has been pushed to the server.";
+                Snackbar.Add(message, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Offline Mode: The remote database is unreachable. You are now using local data.", Severity.Warning);
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void HandleBackupStatus(string status)
+    {
+        InvokeAsync(() =>
+        {
+            Snackbar.Add(status, Severity.Info);
+        });
+    }
 
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
 
+    public void Dispose()
+    {
+        _dbProvider.OnModeChanged -= HandleModeChanged;
+        _backupSync.OnBackupStatusChanged -= HandleBackupStatus;
+    }
 }

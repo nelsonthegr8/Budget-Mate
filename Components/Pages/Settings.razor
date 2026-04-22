@@ -1,0 +1,351 @@
+@page "/settings"
+@using Financial_ForeCast.Services
+@using Microsoft.EntityFrameworkCore
+@inject DbServiceProvider _dbProvider
+@inject DbServiceFactory _dbFactory
+@inject BackupSyncService _backupSync
+@inject ISnackbar Snackbar
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="12" md="8">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Database Settings</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Class="mb-4">
+                        By default Budget Mate stores data locally on your device using SQLite. To use a self-hosted
+                        PostgreSQL or SQL Server database instead, select the database type, enter your connection string,
+                        and test the connection.
+                    </MudText>
+
+                    <MudSelect @bind-Value="selectedDbType" Label="Database Type" Variant="Variant.Outlined" Class="mb-4">
+                        <MudSelectItem Value="RemoteDbType.PostgreSQL">PostgreSQL</MudSelectItem>
+                        <MudSelectItem Value="RemoteDbType.SqlServer">SQL Server</MudSelectItem>
+                    </MudSelect>
+
+                    <MudTextField @bind-Value="@connectionString"
+                                  Label="Connection String"
+                                  Placeholder="@connectionStringPlaceholder"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Storage"
+                                  AdornmentColor="Color.Info"
+                                  Lines="3" />
+
+                    <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">
+                        Current mode: <strong>@currentMode</strong>
+                    </MudText>
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-center gap-4">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.Cable"
+                               OnClick="@TestConnection"
+                               Disabled="@isTesting">
+                        @if (isTesting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Testing...</span>
+                        }
+                        else
+                        {
+                            <span>Test Connection</span>
+                        }
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="@SaveConnectionString"
+                               Disabled="@(!connectionTested)">
+                        Save &amp; Connect
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.DeleteForever"
+                               OnClick="@ClearConnectionString"
+                               Disabled="@(!hasExisting)">
+                        Reset to Local
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        @if (hasExisting)
+        {
+            <MudItem xs="12" sm="12" md="8">
+                <MudCard Elevation="25" Class="rounded-lg pb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h5" Align="Align.Center">Backup &amp; Sync Settings</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-4">
+                            Configure automatic backups of your remote database to your local device.
+                            If backups are disabled (interval set to 0), no local copy will be kept
+                            and you will only have server data.
+                        </MudText>
+
+                        <MudSwitch @bind-Value="backupEnabled" Label="Enable Automatic Backups" Color="Color.Primary" Class="mb-4" />
+
+                        @if (backupEnabled)
+                        {
+                            <MudNumericField @bind-Value="backupIntervalHours"
+                                             Label="Backup Interval (hours)"
+                                             Variant="Variant.Outlined"
+                                             Min="0"
+                                             Max="24"
+                                             HelperText="Set to 0 to disable automatic backups. Max 24 hours."
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="@Icons.Material.Filled.Schedule"
+                                             Class="mb-4" />
+                        }
+
+                        <MudDivider Class="my-4" />
+
+                        <MudText Typo="Typo.h6" Class="mb-2">Reconnect Behavior</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4">
+                            When the remote server comes back online after being offline, you can choose
+                            to automatically push your local data to the server. This will <strong>overwrite</strong>
+                            whatever is on the server with what you have locally.
+                        </MudText>
+
+                        <MudSwitch @bind-Value="pushOnReconnect"
+                                   Label="Push local data to server on reconnect"
+                                   Color="Color.Warning"
+                                   Class="mb-4" />
+
+                        @if (!pushOnReconnect)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                When reconnected, the app will switch back to using the server database as-is.
+                                Any changes made locally while offline will remain only on this device.
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                                Warning: enabling this will overwrite all server data with local data when you come back online.
+                            </MudAlert>
+                        }
+                    </MudCardContent>
+
+                    <MudCardActions Class="d-flex justify-center gap-4">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Size="Size.Large"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="@SaveBackupSettings">
+                            Save Backup Settings
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Info"
+                                   Size="Size.Large"
+                                   StartIcon="@Icons.Material.Filled.CloudDownload"
+                                   OnClick="@ManualBackup"
+                                   Disabled="@isBackingUp">
+                            @if (isBackingUp)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Backing up...</span>
+                            }
+                            else
+                            {
+                                <span>Backup Now</span>
+                            }
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Warning"
+                                   Size="Size.Large"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                                   OnClick="@ManualPush"
+                                   Disabled="@isPushing">
+                            @if (isPushing)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Pushing...</span>
+                            }
+                            else
+                            {
+                                <span>Push Local to Server</span>
+                            }
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string connectionString = "";
+    private RemoteDbType selectedDbType = RemoteDbType.PostgreSQL;
+    private bool isTesting = false;
+    private bool connectionTested = false;
+    private bool hasExisting = false;
+    private string currentMode => hasExisting ? $"Remote ({selectedDbType})" : "Local SQLite (On-Device)";
+
+    // Backup settings
+    private bool backupEnabled = false;
+    private int backupIntervalHours = 0;
+    private bool pushOnReconnect = false;
+    private bool isBackingUp = false;
+    private bool isPushing = false;
+
+    private string connectionStringPlaceholder => selectedDbType switch
+    {
+        RemoteDbType.PostgreSQL => "Host=myserver;Port=5432;Database=budgetmate;Username=user;Password=pass",
+        RemoteDbType.SqlServer => "Server=myserver;Database=budgetmate;User Id=user;Password=pass;TrustServerCertificate=True",
+        _ => "Enter connection string"
+    };
+
+    protected override void OnInitialized()
+    {
+        connectionString = DbServiceFactory.GetRemoteConnectionString();
+        hasExisting = DbServiceFactory.HasRemoteConnectionString();
+        if (hasExisting)
+        {
+            selectedDbType = DbServiceFactory.GetRemoteDbType();
+        }
+
+        // Load backup settings
+        backupEnabled = BackupSyncService.IsBackupEnabled();
+        backupIntervalHours = BackupSyncService.GetBackupIntervalHours();
+        pushOnReconnect = BackupSyncService.IsPushOnReconnect();
+    }
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            Snackbar.Add("Please enter a connection string.", Severity.Warning);
+            return;
+        }
+
+        isTesting = true;
+        connectionTested = false;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Run(async () =>
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+
+                switch (selectedDbType)
+                {
+                    case RemoteDbType.PostgreSQL:
+                        optionsBuilder.UseNpgsql(connectionString);
+                        break;
+                    case RemoteDbType.SqlServer:
+                        optionsBuilder.UseSqlServer(connectionString);
+                        break;
+                }
+
+                using var testDb = new AppDbContext(optionsBuilder.Options);
+                await testDb.Database.EnsureCreatedAsync();
+                await testDb.RoadMaps.CountAsync();
+            });
+
+            connectionTested = true;
+            Snackbar.Add($"Connection successful! {selectedDbType} database is reachable and tables are ready.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            connectionTested = false;
+            Snackbar.Add($"Connection failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isTesting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SaveConnectionString()
+    {
+        DbServiceFactory.SetRemoteConnectionString(connectionString, selectedDbType);
+        _dbProvider.Refresh();
+        hasExisting = true;
+        Snackbar.Add($"Saved. Now using remote {selectedDbType} database.", Severity.Success);
+    }
+
+    private void ClearConnectionString()
+    {
+        DbServiceFactory.ClearRemoteConnectionString();
+        _dbProvider.Refresh();
+        connectionString = "";
+        connectionTested = false;
+        hasExisting = false;
+        backupEnabled = false;
+        backupIntervalHours = 0;
+        pushOnReconnect = false;
+        BackupSyncService.SetBackupEnabled(false);
+        BackupSyncService.SetBackupIntervalHours(0);
+        BackupSyncService.SetPushOnReconnect(false);
+        Snackbar.Add("Reverted to local on-device SQLite database.", Severity.Info);
+    }
+
+    private void SaveBackupSettings()
+    {
+        BackupSyncService.SetBackupEnabled(backupEnabled);
+        BackupSyncService.SetBackupIntervalHours(backupIntervalHours);
+        BackupSyncService.SetPushOnReconnect(pushOnReconnect);
+        _backupSync.StartBackupSchedule();
+        Snackbar.Add("Backup settings saved.", Severity.Success);
+    }
+
+    private async Task ManualBackup()
+    {
+        isBackingUp = true;
+        StateHasChanged();
+        try
+        {
+            await _backupSync.BackupRemoteToLocal();
+            Snackbar.Add("Backup completed successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Backup failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isBackingUp = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ManualPush()
+    {
+        isPushing = true;
+        StateHasChanged();
+        try
+        {
+            await _backupSync.PushLocalToRemote();
+            Snackbar.Add("Local data pushed to server successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Push failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isPushing = false;
+            StateHasChanged();
+        }
+    }
+}

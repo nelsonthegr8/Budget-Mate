@@ -1,18 +1,16 @@
-﻿using SQLite;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Financial_ForeCast.Models
 {
-    
+
     [Table("RoadMaps")]
     public class RoadMaps
     {
 
-        [PrimaryKey, AutoIncrement, Column("RoadMapID")]
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Column("RoadMapID")]
         public int Id { get; set; }
         [Column("RoadMapName")]
         public string RoadMapName { get; set; }
@@ -26,5 +24,5 @@ namespace Financial_ForeCast.Models
         public double PrevNetWorth { get; set; }
         public bool isSelected { get; set; } = false;
     }
-    
+
 }
