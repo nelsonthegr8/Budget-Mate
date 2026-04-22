@@ -30,6 +30,7 @@ namespace Financial_ForeCast
             builder.Services.AddSingleton<ConnectivityService>();
             builder.Services.AddSingleton<BackupSyncService>();
             builder.Services.AddSingleton<DbServiceProvider>();
+            builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddMauiBlazorWebView();
 
             // Uncomment for vanilla OpenAI (non azure)

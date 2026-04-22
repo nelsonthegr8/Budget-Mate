@@ -3,10 +3,11 @@
 @inject DbServiceProvider _dbProvider
 @inject ConnectivityService _connectivity
 @inject BackupSyncService _backupSync
+@inject ThemeService _themeService
 @inject ISnackbar Snackbar
 @implements IDisposable
 @* Required *@
-<MudThemeProvider />
+<MudThemeProvider Theme="@_themeService.Current.Theme" IsDarkMode="@_themeService.Current.IsDark" />
 <MudPopoverProvider />
 
 @* Needed for dialogs *@
@@ -16,7 +17,7 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar>
+    <MudAppBar Fixed="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudButton StartIcon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/">Budget Mate</MudButton>
         @if (_dbProvider.IsOfflineMode)
@@ -27,13 +28,32 @@
         {
             <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-2">Online</MudChip>
         }
+        <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.Palette" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            @foreach (var theme in _themeService.AvailableThemes)
+            {
+                <MudMenuItem OnClick="@(() => ChangeTheme(theme.Name))">
+                    <div class="d-flex align-center gap-2">
+                        @if (theme.Name == _themeService.Current.Name)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Style="visibility:hidden;" />
+                        }
+                        <MudText>@theme.Name</MudText>
+                    </div>
+                </MudMenuItem>
+            }
+        </MudMenu>
     </MudAppBar>
-    <MudDrawer @bind-Open="@_drawerOpen" Style="full-screen-drawer">
-        <NavMenu/>
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
     </MudDrawer>
-    <div Class="mt-0">
+    <MudMainContent Class="mt-0">
         @Body
-    </div>
+    </MudMainContent>
 </MudLayout>
 
 
@@ -46,6 +66,7 @@
         _hasRemoteConfig = _connectivity.HasRemoteConfig;
         _dbProvider.OnModeChanged += HandleModeChanged;
         _backupSync.OnBackupStatusChanged += HandleBackupStatus;
+        _themeService.OnThemeChanged += HandleThemeChanged;
     }
 
     private void HandleModeChanged(bool isOnline)
@@ -81,9 +102,20 @@
         _drawerOpen = !_drawerOpen;
     }
 
+    private void ChangeTheme(string name)
+    {
+        _themeService.SetTheme(name);
+    }
+
+    private void HandleThemeChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
         _dbProvider.OnModeChanged -= HandleModeChanged;
         _backupSync.OnBackupStatusChanged -= HandleBackupStatus;
+        _themeService.OnThemeChanged -= HandleThemeChanged;
     }
 }
