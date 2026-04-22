@@ -6,6 +6,7 @@ namespace Financial_ForeCast.Services
         private readonly ConnectivityService _connectivity;
         private readonly BackupSyncService _backupSync;
         private IDbService _current;
+        private IDbService _resilientCurrent;
         private bool _isOfflineMode;
 
         public bool IsOfflineMode => _isOfflineMode;
@@ -37,9 +38,16 @@ namespace Financial_ForeCast.Services
             {
                 _current = _factory.Create();
             }
+
+            WrapCurrent();
         }
 
-        public IDbService Current => _current;
+        /// <summary>
+        /// Pages use this to access the DB. When running remote, calls are wrapped
+        /// so that a mid-operation connection failure triggers an immediate fallback
+        /// to the local database.
+        /// </summary>
+        public IDbService Current => _resilientCurrent;
 
         public void Refresh()
         {
@@ -56,6 +64,31 @@ namespace Financial_ForeCast.Services
                 _connectivity.StopMonitoring();
                 _backupSync.StopBackupSchedule();
             }
+
+            WrapCurrent();
+        }
+
+        private void WrapCurrent()
+        {
+            if (_current is RemoteDbService)
+            {
+                _resilientCurrent = new ResilientDbService(_current, OnRemoteConnectionFailed, () => _current);
+            }
+            else
+            {
+                _resilientCurrent = _current;
+            }
+        }
+
+        private void OnRemoteConnectionFailed()
+        {
+            if (_isOfflineMode) return;
+
+            // Immediately swap to local so the next call from the page succeeds
+            _current = new LocalDbService();
+            _isOfflineMode = true;
+            WrapCurrent();
+            OnModeChanged?.Invoke(false);
         }
 
         private async void HandleConnectivityChanged(bool isOnline)
@@ -70,6 +103,7 @@ namespace Financial_ForeCast.Services
 
                 _current = _factory.Create();
                 _isOfflineMode = false;
+                WrapCurrent();
                 OnModeChanged?.Invoke(true);
             }
             else if (!isOnline && !_isOfflineMode)
@@ -77,6 +111,7 @@ namespace Financial_ForeCast.Services
                 // Server went down — fall back to local
                 _current = new LocalDbService();
                 _isOfflineMode = true;
+                WrapCurrent();
                 OnModeChanged?.Invoke(false);
             }
         }

@@ -23,5 +23,7 @@ namespace Financial_ForeCast.Models
         public double Total { get; set; }
         [Column("cashStack")]
         public double cashStack { get; set; }
+        [Column("RecurringExtraIncome")]
+        public bool RecurringExtraIncome { get; set; }
     }
 }

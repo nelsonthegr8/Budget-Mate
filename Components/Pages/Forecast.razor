@@ -43,13 +43,41 @@
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="width:50%;" OnClick="@Calculate">Calculate</MudButton>
                 </MudCardActions>
             </MudCard>
+
+            <MudCard Elevation="25" Class="rounded-lg pb-4 mt-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Saved Forecasts</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (savedForecastNames.Count > 0)
+                    {
+                        <MudSelect T="string" Label="Load a saved forecast" @bind-Value="selectedSavedForecastName" Variant="Variant.Outlined">
+                            @foreach (var name in savedForecastNames)
+                            {
+                                <MudSelectItem Value="@name">@name</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudButtonGroup Class="mt-2" OverrideStyles="false">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@LoadSavedForecast" Disabled="@(string.IsNullOrWhiteSpace(selectedSavedForecastName))">Load</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@DeleteSavedForecast" Disabled="@(string.IsNullOrWhiteSpace(selectedSavedForecastName))">Delete</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@NewForecast">New Forecast</MudButton>
+                        </MudButtonGroup>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Align="Align.Center">No saved forecasts yet.</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
         </MudItem>
 
         <MudItem xs="12" sm="12" md="6" Style="height: 25vh">
             <MudCard Elevation="25" Class="rounded-lg pb-4">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h5" Align="Align.Center">Forcast</MudText>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Forecast</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
 
@@ -60,14 +88,20 @@
                             <MudTh>Year</MudTh>
                             <MudTh>Savings</MudTh>
                             <MudTh>Extra Income</MudTh>
+                            <MudTh>Recurring</MudTh>
                             <MudTh>Total</MudTh>
                             <MudTh>Cash Stack</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd DataLabel="Month">@context.Month</MudTd>
-                            <MudTd DataLabel="Sign">@context.Year</MudTd>
-                            <MudTd DataLabel="Name">@String.Format("{0:0.00}", context.Income)</MudTd>
-                            <MudTd DataLabel="Position">@String.Format("{0:0.00}", context.ExtraIncome)</MudTd>
+                            <MudTd DataLabel="Year">@context.Year</MudTd>
+                            <MudTd DataLabel="Savings">@String.Format("{0:0.00}", context.Income)</MudTd>
+                            <MudTd DataLabel="Extra Income">
+                                <MudNumericField T="double" Value="@context.ExtraIncome" ValueChanged="@(val => OnExtraIncomeChanged(context, val))" Variant="Variant.Text" HideSpinButtons="true" Style="max-width:100px;" />
+                            </MudTd>
+                            <MudTd DataLabel="Recurring">
+                                <MudSwitch T="bool" Value="@context.RecurringExtraIncome" ValueChanged="@(val => OnRecurringChanged(context, val))" Color="Color.Info" />
+                            </MudTd>
                             <MudTd DataLabel="Total">@String.Format("{0:0.00}", context.Total)</MudTd>
                             <MudTd DataLabel="Cash Stack">@String.Format("{0:0.00}", context.cashStack)</MudTd>
                         </RowTemplate>
@@ -79,11 +113,7 @@
                 </MudCardContent>
 
                 <MudButton>
-                    <MudTextField @bind-Value="@forcastName" Label="ForcastName" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" HideSpinButtons="true" >
-                        <InputContent>
-                            <input @oninput="HandleForecastNameInput" class="mud-input-slot" />
-                        </InputContent>
-                    </MudTextField>
+                    <MudTextField T="string" Value="@forcastName" ValueChanged="HandleForecastNameChanged" Label="Forecast Name" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentColor="Color.Info" Immediate="true" />
 
                     <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" IconColor="Color.Secondary" Size="Size.Large" OnClick="@SaveForecasts" Disabled="@isSaveDisabled">Save</MudButton>
                 </MudButton>
@@ -100,7 +130,6 @@
     public IEnumerable<RoadMaps> roadMaps = new List<RoadMaps>();
     public List<Forecasts> forecasts = new List<Forecasts>();
     public IReadOnlyCollection<string> SelectedValues;
-    //public string[] monthAbbreviations = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
     int roadMapId;
     public bool notUseingStartingCashStack = false;
     public double startingCashStack;
@@ -118,6 +147,9 @@
     private bool prevPageActive = true;
     private bool nextPageActive = true;
 
+    private List<string> savedForecastNames = new List<string>();
+    private string selectedSavedForecastName;
+    private bool isLoadedForecast = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -129,17 +161,18 @@
     {
         Accnts = await Task.Run(() => _dbService.GetAccounts());
         roadMaps = await Task.Run(() => _dbService.GetRoadMaps());
+        savedForecastNames = await Task.Run(() => _dbService.GetSavedForecastNames());
         if (roadMaps.Any())
         {
-            // Preselect the first RoadMap or any other logic to determine the preselected item
             roadMapId = roadMaps.First().Id;
         }
     }
-    //Forecast Pagination Logic
+
+    // Forecast Pagination Logic
     private void CheckIfButtonsActive()
     {
-        prevPageActive = currentPage == 0 ? true : false;
-        nextPageActive = currentPage == totalPages - 1 ? true : false;
+        prevPageActive = currentPage == 0;
+        nextPageActive = currentPage == totalPages - 1;
     }
 
     private void NextPage()
@@ -175,7 +208,83 @@
         }
         return new List<Forecasts>();
     }
-    //End of Forecast Pagination Logic
+    // End of Forecast Pagination Logic
+
+    // Extra Income Editing
+    private void OnExtraIncomeChanged(Forecasts row, double newValue)
+    {
+        row.ExtraIncome = newValue;
+
+        if (row.RecurringExtraIncome)
+        {
+            ApplyRecurringExtraIncome(row);
+        }
+
+        RecalculateTotals();
+        GroupForecastsByYear();
+    }
+
+    private void OnRecurringChanged(Forecasts row, bool newValue)
+    {
+        row.RecurringExtraIncome = newValue;
+
+        if (newValue)
+        {
+            ApplyRecurringExtraIncome(row);
+        }
+        else
+        {
+            RemoveRecurringExtraIncome(row);
+        }
+
+        RecalculateTotals();
+        GroupForecastsByYear();
+    }
+
+    private void ApplyRecurringExtraIncome(Forecasts sourceRow)
+    {
+        int sourceIndex = forecasts.IndexOf(sourceRow);
+        for (int i = sourceIndex + 1; i < forecasts.Count; i++)
+        {
+            if (forecasts[i].Month == sourceRow.Month)
+            {
+                forecasts[i].ExtraIncome = sourceRow.ExtraIncome;
+                forecasts[i].RecurringExtraIncome = true;
+            }
+        }
+    }
+
+    private void RemoveRecurringExtraIncome(Forecasts sourceRow)
+    {
+        int sourceIndex = forecasts.IndexOf(sourceRow);
+        for (int i = sourceIndex + 1; i < forecasts.Count; i++)
+        {
+            if (forecasts[i].Month == sourceRow.Month && forecasts[i].RecurringExtraIncome)
+            {
+                forecasts[i].ExtraIncome = 0;
+                forecasts[i].RecurringExtraIncome = false;
+            }
+        }
+    }
+
+    private void RecalculateTotals()
+    {
+        double runningCash = 0;
+        if (forecasts.Count > 0)
+        {
+            runningCash = 0;
+        }
+
+        for (int i = 0; i < forecasts.Count; i++)
+        {
+            var f = forecasts[i];
+            f.Total = f.Income + f.ExtraIncome;
+            runningCash += f.Total;
+            f.cashStack = runningCash;
+        }
+    }
+    // End of Extra Income Editing
+
     // Forecast Manipulation
     private void GroupForecastsByYear()
     {
@@ -186,16 +295,10 @@
         totalPages = forecastsByYear.Count;
     }
 
-    private void updateForecast(CellContext<Forecasts> forcast)
-    {
-        int forcastIndex = forecasts.IndexOf(forcast.Item);
-        forecasts[forcastIndex].ExtraIncome = 100;
-    }
-
     public void CalculateStartingCashStack()
     {
         startingCashStack = 0;
-        if(SelectedValues != null)
+        if (SelectedValues != null)
         {
             foreach (var accnt in Accnts)
             {
@@ -205,7 +308,6 @@
                 }
             }
         }
-    
     }
 
     public void CalculateSavingsPerMonth()
@@ -251,12 +353,14 @@
                     cashStack = startingCash,
                     Income = savingsPerMonth,
                     ExtraIncome = 0,
+                    RecurringExtraIncome = false,
                     Total = startingCash,
                     ForcastName = forcastName,
                 };
             forecasts.Add(forecast);
             startDate = startDate.AddMonths(1);
         }
+        isLoadedForecast = false;
         GroupForecastsByYear();
         CheckIfButtonsActive();
         CheckSaveButtonActivation();
@@ -266,13 +370,67 @@
     {
         if (forecasts != null && forecasts.Count > 0)
         {
+            foreach (var f in forecasts)
+            {
+                f.ForcastName = forcastName;
+            }
+
+            if (isLoadedForecast)
+            {
+                await _dbService.RemoveForecasts(forcastName);
+            }
+
             await _dbService.AddForecasts(forecasts);
+            savedForecastNames = await Task.Run(() => _dbService.GetSavedForecastNames());
+            isLoadedForecast = true;
+            StateHasChanged();
         }
     }
 
-    private void HandleForecastNameInput(ChangeEventArgs e)
+    private async Task LoadSavedForecast()
     {
-        forcastName = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(selectedSavedForecastName)) return;
+
+        forecasts = await Task.Run(() => _dbService.GetForecastsByName(selectedSavedForecastName));
+        forcastName = selectedSavedForecastName;
+        isLoadedForecast = true;
+        currentPage = 0;
+        GroupForecastsByYear();
+        CheckIfButtonsActive();
+        CheckSaveButtonActivation();
+        StateHasChanged();
+    }
+
+    private async Task DeleteSavedForecast()
+    {
+        if (string.IsNullOrWhiteSpace(selectedSavedForecastName)) return;
+
+        await _dbService.RemoveForecasts(selectedSavedForecastName);
+        savedForecastNames = await Task.Run(() => _dbService.GetSavedForecastNames());
+
+        if (forcastName == selectedSavedForecastName)
+        {
+            NewForecast();
+        }
+
+        selectedSavedForecastName = null;
+        StateHasChanged();
+    }
+
+    private void NewForecast()
+    {
+        forecasts.Clear();
+        forcastName = "";
+        isLoadedForecast = false;
+        currentPage = 0;
+        GroupForecastsByYear();
+        CheckIfButtonsActive();
+        CheckSaveButtonActivation();
+    }
+
+    private void HandleForecastNameChanged(string value)
+    {
+        forcastName = value ?? "";
         CheckSaveButtonActivation();
     }
 

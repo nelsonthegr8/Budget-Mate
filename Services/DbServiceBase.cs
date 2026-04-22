@@ -248,6 +248,10 @@ namespace Financial_ForeCast.Services
             int Year = today.Year;
             return await _db.Forecasts.Where(x => x.Month == month && x.Year == Year).ToListAsync();
         }
+        public async Task<List<string>> GetSavedForecastNames()
+        {
+            return await _db.Forecasts.Select(x => x.ForcastName).Distinct().ToListAsync();
+        }
         //End of Forecast Section
     }
 }

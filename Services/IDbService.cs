@@ -43,5 +43,6 @@ namespace Financial_ForeCast.Services
         Task UpdateForecasts(Forecasts forecast);
         Task<List<Forecasts>> GetForecastsByName(string forecastName);
         Task<List<Forecasts>> GetForecastsByCurrentMonthAndYear();
+        Task<List<string>> GetSavedForecastNames();
     }
 }
