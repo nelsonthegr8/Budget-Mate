@@ -1,10 +1,12 @@
 @inherits LayoutComponentBase
 @using Financial_ForeCast.Services
+@using Microsoft.AspNetCore.Components.Routing
 @inject DbServiceProvider _dbProvider
 @inject ConnectivityService _connectivity
 @inject BackupSyncService _backupSync
 @inject ThemeService _themeService
 @inject ISnackbar Snackbar
+@inject NavigationManager _nav
 @implements IDisposable
 @* Required *@
 <MudThemeProvider Theme="@_themeService.Current.Theme" IsDarkMode="@_themeService.Current.IsDark" />
@@ -19,7 +21,11 @@
 <MudLayout>
     <MudAppBar Fixed="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudButton StartIcon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/">Budget Mate</MudButton>
+        @if (!_isHomePage)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" OnClick="@GoBack" />
+        }
+        <MudText Typo="Typo.subtitle1" Class="ml-2" Style="font-weight:600;">Budget Mate</MudText>
         @if (_dbProvider.IsOfflineMode)
         {
             <MudChip T="string" Color="Color.Warning" Size="Size.Small" Class="ml-2">Offline</MudChip>
@@ -48,7 +54,7 @@
             }
         </MudMenu>
     </MudAppBar>
-    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Never" Elevation="2">
         <NavMenu />
     </MudDrawer>
     <MudMainContent Class="mt-0">
@@ -60,6 +66,7 @@
 @code {
     bool _drawerOpen = false;
     bool _hasRemoteConfig = false;
+    bool _isHomePage = true;
 
     protected override void OnInitialized()
     {
@@ -67,6 +74,8 @@
         _dbProvider.OnModeChanged += HandleModeChanged;
         _backupSync.OnBackupStatusChanged += HandleBackupStatus;
         _themeService.OnThemeChanged += HandleThemeChanged;
+        _nav.LocationChanged += HandleLocationChanged;
+        UpdateIsHomePage();
     }
 
     private void HandleModeChanged(bool isOnline)
@@ -102,6 +111,26 @@
         _drawerOpen = !_drawerOpen;
     }
 
+    private void GoBack()
+    {
+        _nav.NavigateTo("/");
+    }
+
+    private void HandleLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            UpdateIsHomePage();
+            StateHasChanged();
+        });
+    }
+
+    private void UpdateIsHomePage()
+    {
+        var relativePath = _nav.ToBaseRelativePath(_nav.Uri);
+        _isHomePage = string.IsNullOrEmpty(relativePath) || relativePath == "/";
+    }
+
     private void ChangeTheme(string name)
     {
         _themeService.SetTheme(name);
@@ -117,5 +146,6 @@
         _dbProvider.OnModeChanged -= HandleModeChanged;
         _backupSync.OnBackupStatusChanged -= HandleBackupStatus;
         _themeService.OnThemeChanged -= HandleThemeChanged;
+        _nav.LocationChanged -= HandleLocationChanged;
     }
 }

@@ -10,6 +10,7 @@ namespace Financial_ForeCast.Services
         public DbSet<Accnts> Accounts { get; set; }
         public DbSet<MainMenuCards> MainMenuCards { get; set; }
         public DbSet<Forecasts> Forecasts { get; set; }
+        public DbSet<NetWorthSnapshot> NetWorthSnapshots { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

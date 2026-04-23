@@ -44,5 +44,9 @@ namespace Financial_ForeCast.Services
         Task<List<Forecasts>> GetForecastsByName(string forecastName);
         Task<List<Forecasts>> GetForecastsByCurrentMonthAndYear();
         Task<List<string>> GetSavedForecastNames();
+
+        // Net Worth History
+        Task RecordNetWorthSnapshot(double amount);
+        Task<List<NetWorthSnapshot>> GetNetWorthHistory();
     }
 }

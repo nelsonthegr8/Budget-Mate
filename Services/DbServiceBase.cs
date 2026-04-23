@@ -52,8 +52,17 @@ namespace Financial_ForeCast.Services
 
                 if (card.Name == "Net Worth")
                 {
-                    var netWorth = await GetRoadMapNetWorthSum(await GetSelectedRoadMapID());
-                    card.Amount = netWorth;
+                    var history = await GetNetWorthHistory();
+                    if (history.Count > 0)
+                    {
+                        card.Amount = history.Last().Amount;
+                    }
+                    else
+                    {
+                        var netWorth = await GetRoadMapNetWorthSum(await GetSelectedRoadMapID());
+                        card.Amount = netWorth;
+                        await RecordNetWorthSnapshot(netWorth);
+                    }
                     await UpdateMainMenuCard(card);
                 }
                 else if (card.Name == "Income")
@@ -179,6 +188,7 @@ namespace Financial_ForeCast.Services
                 rMaps.NetWorth = roadMapNetWorthAmount;
                 _db.RoadMaps.Update(rMaps);
                 await _db.SaveChangesAsync();
+                await RecordNetWorthSnapshot(roadMapNetWorthAmount);
             }
         }
         public async Task<int> GetSelectedRoadMapID()
@@ -253,5 +263,35 @@ namespace Financial_ForeCast.Services
             return await _db.Forecasts.Select(x => x.ForcastName).Distinct().ToListAsync();
         }
         //End of Forecast Section
+        // Net Worth History
+        public async Task RecordNetWorthSnapshot(double amount)
+        {
+            var today = DateTime.Today;
+            var existing = await _db.NetWorthSnapshots
+                .FirstOrDefaultAsync(x => x.RecordedDate == today);
+
+            if (existing != null)
+            {
+                existing.Amount = amount;
+                _db.NetWorthSnapshots.Update(existing);
+            }
+            else
+            {
+                _db.NetWorthSnapshots.Add(new NetWorthSnapshot
+                {
+                    RecordedDate = today,
+                    Amount = amount
+                });
+            }
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task<List<NetWorthSnapshot>> GetNetWorthHistory()
+        {
+            return await _db.NetWorthSnapshots
+                .OrderBy(x => x.RecordedDate)
+                .ToListAsync();
+        }
+        //End of Net Worth History Section
     }
 }

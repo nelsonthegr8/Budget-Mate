@@ -61,6 +61,10 @@ namespace Financial_ForeCast.Services
         public Task<List<Forecasts>> GetForecastsByCurrentMonthAndYear() => Execute(() => _inner.GetForecastsByCurrentMonthAndYear(), fb => fb.GetForecastsByCurrentMonthAndYear());
         public Task<List<string>> GetSavedForecastNames() => Execute(() => _inner.GetSavedForecastNames(), fb => fb.GetSavedForecastNames());
 
+        // Net Worth History
+        public Task RecordNetWorthSnapshot(double amount) => Execute(() => _inner.RecordNetWorthSnapshot(amount), fb => fb.RecordNetWorthSnapshot(amount));
+        public Task<List<NetWorthSnapshot>> GetNetWorthHistory() => Execute(() => _inner.GetNetWorthHistory(), fb => fb.GetNetWorthHistory());
+
         private async Task<T> Execute<T>(Func<Task<T>> operation, Func<IDbService, Task<T>> fallbackOperation)
         {
             try

@@ -5,32 +5,69 @@
 @using Financial_ForeCast.Services
 @inject DbServiceProvider _dbProvider
 
-<MudContainer Class="mt-16">
+<MudContainer Class="mt-16 pa-4">
     @if (isLoading)
     {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        <div class="d-flex justify-center align-center" style="min-height:60vh;">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        </div>
     }
     else
     {
-        <MudGrid Class="mt-8">
+        <MudGrid Spacing="4" Class="mt-4">
             @foreach (var item in mainMenuCards)
             {
-                <MudItem xs="6" sm="6" md="4">
+                <MudItem xs="12" sm="6" md="4">
                     <MudLink Href="@item.Link" Underline="Underline.None">
-                        <MudCard Elevation="25" Class="rounded-lg pb-4" Style="height: 25vh">
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudText Typo="Typo.h5" Align="Align.Center">@item.Name</MudText>
-                                </CardHeaderContent>
-                            </MudCardHeader>
-
-                            <MudCardContent Style="height: auto">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-center justify-center mud-height-full py-4">
-                                        <MudText Typo="Typo.h4">@item.Amount</MudText>
+                        <MudCard Elevation="4" Class="rounded-xl card-hover" Style="overflow:hidden; position:relative;">
+                            @if (item.Name == "Net Worth")
+                            {
+                                <MudCardContent Style="min-height:220px;">
+                                    <div class="d-flex justify-space-between align-center" style="height:100%;">
+                                        <div>
+                                            <div class="d-flex align-center gap-2 mb-2">
+                                                <MudIcon Icon="@GetCardIcon(item.Name)" Size="Size.Medium" Color="Color.Primary" />
+                                                <MudText Typo="Typo.subtitle1" Style="font-weight:600; letter-spacing:0.5px;">@item.Name</MudText>
+                                            </div>
+                                            @if (netWorthTrendPercent != 0)
+                                            {
+                                                <div class="d-flex align-center gap-1 mt-1">
+                                                    <MudIcon Icon="@(netWorthTrendPercent > 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)"
+                                                             Color="@(netWorthTrendPercent > 0 ? Color.Success : Color.Error)" Size="Size.Small" />
+                                                    <MudText Typo="Typo.caption" Color="@(netWorthTrendPercent > 0 ? Color.Success : Color.Error)">
+                                                        @(netWorthTrendPercent > 0 ? "+" : "-")@netWorthTrendPercent.ToString("0.0")%
+                                                    </MudText>
+                                                </div>
+                                            }else{
+                                                <div class="d-flex align-center gap-1 mt-1">
+                                                    <MudIcon Icon="@Icons.Material.Filled.TrendingFlat"
+                                                             Color="Color.Default" Size="Size.Small" ViewBox="0 0 24 24"/>
+                                                    <MudText Typo="Typo.caption" Color="Color.Default">
+                                                        @netWorthTrendPercent.ToString("0")%
+                                                    </MudText>
+                                                </div>
+                                            }
+                                            <MudText Typo="Typo.h4" Style="font-weight:700;" Class="mt-2">@FormatCurrency(item.Amount)</MudText>
+                                        </div>
+                                        <div class="d-flex align-end gap-1" style="height:110px;">
+                                            @foreach (var barHeight in netWorthBarHeights)
+                                            {
+                                                <div style="width:6px; border-radius:3px; height:@(barHeight)%; background:@netWorthBarColor; min-height:4px;"></div>
+                                            }
+                                        </div>
                                     </div>
-                                </div>
-                            </MudCardContent>
+                                </MudCardContent>
+                            }
+                            else
+                            {
+                                <MudCardContent Style="min-height:220px; padding:24px;">
+                                    <div class="d-flex align-center gap-2 mb-2">
+                                        <MudIcon Icon="@GetCardIcon(item.Name)" Size="Size.Medium" Color="Color.Primary" />
+                                        <MudText Typo="Typo.subtitle1" Style="font-weight:600; letter-spacing:0.5px;">@item.Name</MudText>
+                                    </div>
+                                    <MudText Typo="Typo.h3" Style="font-weight:700;" Class="mt-4">@FormatCurrency(item.Amount)</MudText>
+                                </MudCardContent>
+                            }
                         </MudCard>
                     </MudLink>
                 </MudItem>
@@ -39,11 +76,26 @@
     }
 </MudContainer>
 
+<style>
+    .card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2) !important;
+    }
+
+    </style>
+
 @code {
-    
+
     private IDbService _dbService => _dbProvider.Current;
     public List<MainMenuCards> mainMenuCards;
     private bool isLoading = true;
+
+    private double[] netWorthBarHeights = Array.Empty<double>();
+    private string netWorthBarColor = "#7c4dff";
+    private double netWorthTrendPercent = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -54,6 +106,68 @@
     {
         isLoading = true;
         mainMenuCards = await _dbService.GetMainMenuCards();
+        await LoadNetWorthBars();
         isLoading = false;
+    }
+
+    private async Task LoadNetWorthBars()
+    {
+        var history = await _dbService.GetNetWorthHistory();
+        const int barCount = 12;
+
+        if (history.Count == 0)
+        {
+            netWorthBarHeights = Enumerable.Repeat(50.0, barCount).ToArray();
+            netWorthTrendPercent = 0;
+            return;
+        }
+
+        // Take last N entries, pad with duplicates of the first if not enough
+        var data = history.TakeLast(barCount).Select(h => h.Amount).ToList();
+        while (data.Count < barCount)
+        {
+            data.Insert(0, data.First());
+        }
+
+        double max = data.Max();
+        double min = data.Min();
+        double range = max - min;
+
+        if (range == 0)
+        {
+            netWorthBarHeights = Enumerable.Repeat(50.0, barCount).ToArray();
+        }
+        else
+        {
+            netWorthBarHeights = data.Select(d => 15.0 + ((d - min) / range) * 85.0).ToArray();
+        }
+
+        // Trend
+        bool isTrendingUp = history.Count >= 2 && history.Last().Amount >= history[history.Count - 2].Amount;
+
+        if (history.Count >= 2)
+        {
+            double prev = history[history.Count - 2].Amount;
+            if (prev != 0)
+            {
+                netWorthTrendPercent = ((history.Last().Amount - prev) / Math.Abs(prev)) * 100.0;
+            }
+            
+            netWorthBarColor = isTrendingUp ? "#4caf50" : "#f44336";
+        }
+    }
+
+    private string GetCardIcon(string cardName) => cardName switch
+    {
+        "Net Worth" => Icons.Material.Filled.AccountBalance,
+        "Income" => Icons.Material.Filled.TrendingUp,
+        "Expenses" => Icons.Material.Filled.TrendingDown,
+        "Financial Forecast" => Icons.Material.Filled.Analytics,
+        _ => Icons.Material.Filled.CreditCard,
+    };
+
+    private string FormatCurrency(double amount)
+    {
+        return amount.ToString("C2");
     }
 }
