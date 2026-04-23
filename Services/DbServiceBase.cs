@@ -216,6 +216,12 @@ namespace Financial_ForeCast.Services
             await UpdateRoadNetWorthAmount(accnt.RoadMapID, roadMapNetWorthAmount);
         }
 
+        public async Task UpdateAccount(Accnts accnt)
+        {
+            _db.Accounts.Update(accnt);
+            await _db.SaveChangesAsync();
+        }
+
         public async Task RemoveAccount(int id)
         {
             var accnt = await _db.Accounts.FirstOrDefaultAsync(x => x.Id == id);

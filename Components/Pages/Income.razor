@@ -54,7 +54,13 @@
                     <MudDataGrid Items="@income" SortMode="@SortMode.Single" Groupable="false" Height="25vh" FixedHeader="true" Breakpoint="Breakpoint.None">
                         <Columns>
                             <PropertyColumn Property="x => x.Name" />
-                            <PropertyColumn Property="x => x.Amount" />
+                            <TemplateColumn Title="Amount">
+                                <CellTemplate Context="income">
+                                    <MudNumericField T="double" Value="@income.Item.Amount" ValueChanged="@(val => OnIncomeAmountChanged(income.Item, val))"
+                                                     Variant="Variant.Text" Margin="Margin.Dense" HideSpinButtons="true"
+                                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                                </CellTemplate>
+                            </TemplateColumn>
                             <TemplateColumn CellClass="d-flex justify-end">
                                 <CellTemplate Context="income">
                                     <MudStack Row>
@@ -101,6 +107,12 @@
         Task.Run(() => _dbService.RemoveByIncomeExpenseByID(result.Item.Id));
         // Optionally, update the UI by removing the item from the list
         income = income.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    private async Task OnIncomeAmountChanged(IncomeExpense item, double newAmount)
+    {
+        item.Amount = newAmount;
+        await _dbService.UpdateIncomeExpense(item);
     }
 
     public async Task Save()

@@ -34,6 +34,7 @@ namespace Financial_ForeCast.Services
         // Account
         Task<List<Accnts>> GetAccounts();
         Task AddAccount(Accnts accnt);
+        Task UpdateAccount(Accnts accnt);
         Task RemoveAccount(int id);
 
         // Forecast

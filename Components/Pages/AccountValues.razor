@@ -50,7 +50,13 @@
                     <MudDataGrid Items="@Accnts" SortMode="@SortMode.Single" Groupable="false" Height="25vh" FixedHeader="true" Breakpoint="Breakpoint.None" Dense="true" ColumnWidthMode="Fixed" Style="width: 100%;" >
                         <Columns>
                             <PropertyColumn Property="x => x.AccountName" Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"  Sortable="false"/>
-                            <PropertyColumn Property="x => x.Amount" Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" Sortable="false" />
+                            <TemplateColumn Title="Amount" Width="10%" Sortable="false">
+                                <CellTemplate Context="account">
+                                    <MudNumericField T="double" Value="@account.Item.Amount" ValueChanged="@(val => OnAccountAmountChanged(account.Item, val))"
+                                                     Variant="Variant.Text" Margin="Margin.Dense" HideSpinButtons="true"
+                                                     Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                                </CellTemplate>
+                            </TemplateColumn>
                             @* <PropertyColumn Property="x => x.Type" Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" Sortable="false" /> *@
                             <TemplateColumn Width="10%" Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" Sortable="false">
                                 <CellTemplate Context="account">
@@ -87,6 +93,12 @@
         Task.Run(() => _dbService.RemoveAccount(result.Item.Id));
         // Optionally, update the UI by removing the item from the list
         Accnts = Accnts.Where(x => x.Id != result.Item.Id).ToList();
+    }
+
+    private async Task OnAccountAmountChanged(Accnts account, double newAmount)
+    {
+        account.Amount = newAmount;
+        await _dbService.UpdateAccount(account);
     }
 
     public async Task Save()

@@ -50,6 +50,7 @@ namespace Financial_ForeCast.Services
         // Account
         public Task<List<Accnts>> GetAccounts() => Execute(() => _inner.GetAccounts(), fb => fb.GetAccounts());
         public Task AddAccount(Accnts accnt) => Execute(() => _inner.AddAccount(accnt), fb => fb.AddAccount(accnt));
+        public Task UpdateAccount(Accnts accnt) => Execute(() => _inner.UpdateAccount(accnt), fb => fb.UpdateAccount(accnt));
         public Task RemoveAccount(int id) => Execute(() => _inner.RemoveAccount(id), fb => fb.RemoveAccount(id));
 
         // Forecast
