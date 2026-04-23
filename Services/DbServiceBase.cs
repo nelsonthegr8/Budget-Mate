@@ -21,7 +21,7 @@ namespace Financial_ForeCast.Services
         // Main Menu Cards Section
         public async Task<List<MainMenuCards>> GetMainMenuCards()
         {
-            var result = await _db.MainMenuCards.ToListAsync();
+            var result = await _db.MainMenuCards.OrderBy(c => c.Name == "Net Worth" ? 0 : 1).ToListAsync();
             if (result.Count == 0)
             {
                 foreach (var card in Cards)
@@ -52,15 +52,11 @@ namespace Financial_ForeCast.Services
 
                 if (card.Name == "Net Worth")
                 {
+                    var netWorth = await GetRoadMapNetWorthSum(await GetSelectedRoadMapID());
+                    card.Amount = netWorth;
                     var history = await GetNetWorthHistory();
-                    if (history.Count > 0)
+                    if (history.Count <= 0)
                     {
-                        card.Amount = history.Last().Amount;
-                    }
-                    else
-                    {
-                        var netWorth = await GetRoadMapNetWorthSum(await GetSelectedRoadMapID());
-                        card.Amount = netWorth;
                         await RecordNetWorthSnapshot(netWorth);
                     }
                     await UpdateMainMenuCard(card);
@@ -77,6 +73,15 @@ namespace Financial_ForeCast.Services
                     var expenses = await GetExpenses();
                     double totalExpenses = expenses.Sum(x => x.Amount);
                     card.Amount = totalExpenses;
+                    await UpdateMainMenuCard(card);
+                }
+                else if (card.Name == "Financial Forecast")
+                {
+                    var income = await GetIncome();
+                    double totalIncome = income.Sum(x => x.Amount);
+                    var expenses = await GetExpenses();
+                    double totalExpenses = expenses.Sum(x => x.Amount);
+                    card.Amount = totalIncome - totalExpenses;
                     await UpdateMainMenuCard(card);
                 }
             }
@@ -267,8 +272,9 @@ namespace Financial_ForeCast.Services
         public async Task RecordNetWorthSnapshot(double amount)
         {
             var today = DateTime.Today;
+            var todayString = DateTime.Today.ToString();
             var existing = await _db.NetWorthSnapshots
-                .FirstOrDefaultAsync(x => x.RecordedDate == today);
+                .FirstOrDefaultAsync(x => x.RecordedDate == todayString);
 
             if (existing != null)
             {
@@ -279,7 +285,7 @@ namespace Financial_ForeCast.Services
             {
                 _db.NetWorthSnapshots.Add(new NetWorthSnapshot
                 {
-                    RecordedDate = today,
+                    RecordedDate = today.ToString(),
                     Amount = amount
                 });
             }

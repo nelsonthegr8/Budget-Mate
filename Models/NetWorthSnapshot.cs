@@ -11,7 +11,7 @@ namespace Financial_ForeCast.Models
         public int Id { get; set; }
 
         [Column("RecordedDate")]
-        public DateTime RecordedDate { get; set; }
+        public string RecordedDate { get; set; }
 
         [Column("Amount")]
         public double Amount { get; set; }

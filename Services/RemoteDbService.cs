@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Financial_ForeCast.Services
 {
@@ -25,7 +26,8 @@ namespace Financial_ForeCast.Services
             }
 
             _db = new AppDbContext(optionsBuilder.Options);
-            InitializeDatabase();
+            
+            _db.Database.EnsureCreated();
         }
     }
 }

@@ -65,7 +65,7 @@
                                         <MudIcon Icon="@GetCardIcon(item.Name)" Size="Size.Medium" Color="Color.Primary" />
                                         <MudText Typo="Typo.subtitle1" Style="font-weight:600; letter-spacing:0.5px;">@item.Name</MudText>
                                     </div>
-                                    <MudText Typo="Typo.h3" Style="font-weight:700;" Class="mt-4">@FormatCurrency(item.Amount)</MudText>
+                                    <MudText Typo="Typo.h3" Style="font-weight:700;" Class="mt-4" Color="@(item.Amount > 0 && item.Name != "Expenses" ? Color.Success : Color.Error)">@FormatCurrency(item.Amount)</MudText>
                                 </MudCardContent>
                             }
                         </MudCard>
